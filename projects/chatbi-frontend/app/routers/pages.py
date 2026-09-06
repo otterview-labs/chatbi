@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+"""纯页面路由。
+
+这里不处理业务逻辑，只负责把几个核心 HTML 页面返回给浏览器。
+页面中的数据请求由前端脚本再去调用 `/api` 和 `/api/dev` 接口。
+"""
+
+from pathlib import Path
+
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+
+router = APIRouter()
+
+templates = Jinja2Templates(directory=str(Path(__file__).resolve().parents[2] / "templates"))
+
+
+@router.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    # 智能问数首页。
+    return templates.TemplateResponse(request, "index.html")
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request):
+    # 图表大屏页面。
+    return templates.TemplateResponse(request, "dashboard.html")
+
+
+@router.get("/data-dev", response_class=HTMLResponse)
+def data_dev(request: Request):
+    # 数据开发页面。
+    return templates.TemplateResponse(request, "data_dev.html")
+
+
+@router.get("/datasources", response_class=HTMLResponse)
+def datasources(request: Request):
+    # 数据源管理页面。
+    return templates.TemplateResponse(request, "datasources.html")

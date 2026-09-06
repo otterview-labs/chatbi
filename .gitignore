@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# 编译/构建产物（Nuitka 产物有 2.5G，不入库）
+projects/chatbi-smart-ask/build/
+artifacts/chatbi-smart-ask-onefile
+
+# 运行时可变数据（演示种子数据 demo.db / datasources.json 保留入库）
+projects/chatbi-smart-ask/storage/query_cache.json
+projects/chatbi-smart-ask/storage/users.json
+
+# 系统文件
+.DS_Store
+
+# 编辑器
+.idea/
+.vscode/

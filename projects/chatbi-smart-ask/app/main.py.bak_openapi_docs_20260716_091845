@@ -1,0 +1,91 @@
+from __future__ import annotations
+
+"""应用入口。
+
+负责三件事：
+1. 创建 FastAPI 应用实例
+2. 注册中间件、静态资源和路由
+3. 在启动时初始化演示数据库并暴露健康检查
+"""
+
+from pathlib import Path
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
+
+from app.core.settings import get_settings, llm_runtime_status
+from app.routers.api import router as api_router
+from app.routers.data_dev import router as data_dev_router
+from app.routers.pages import router as pages_router
+from app.services.demo_db import ensure_demo_db
+
+
+def create_app() -> FastAPI:
+    # 统一在这里完成应用装配，便于本地启动和测试脚本复用同一入口。
+    settings = get_settings()
+
+    app = FastAPI(
+        title=settings.app_name,
+        version=settings.app_version,
+        docs_url="/docs" if settings.debug else None,
+        redoc_url="/redoc" if settings.debug else None,
+    )
+
+    # 演示项目默认允许配置化跨域，便于本地调试和后续前后端拆分。
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allow_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # 登录态通过 Session 保存，页面接口直接复用浏览器 Cookie。
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.session_secret,
+        https_only=settings.session_https_only,
+        same_site=settings.session_same_site,
+    )
+
+    root_dir = Path(__file__).resolve().parents[1]
+    static_dir = root_dir / "static"
+    templates_dir = root_dir / "templates"
+    storage_dir = root_dir / "storage"
+
+    static_dir.mkdir(parents=True, exist_ok=True)
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    storage_dir.mkdir(parents=True, exist_ok=True)
+
+    # 静态目录下放的是 CSS、前端库和图表依赖。
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    # 页面路由负责返回 HTML，接口路由负责返回 JSON / SSE。
+    app.include_router(pages_router)
+    app.include_router(api_router, prefix="/api")
+    app.include_router(data_dev_router, prefix="/api/dev")
+
+    @app.on_event("startup")
+    def _startup() -> None:
+        # 启动时确保演示库存在，这样首次拉起项目就能直接体验。
+        ensure_demo_db(settings.demo_db_path)
+
+    @app.get("/health")
+    def health() -> dict:
+        # 健康检查除了服务存活，也顺带返回当前 LLM 模式，方便排查。
+        runtime = llm_runtime_status(settings)
+        return {
+            "ok": True,
+            "app": settings.app_name,
+            "version": settings.app_version,
+            "llm_provider": runtime["provider"],
+            "llm_mode": runtime["mode"],
+            "llm_ready": runtime["ready"],
+        }
+
+    return app
+
+
+app = create_app()
