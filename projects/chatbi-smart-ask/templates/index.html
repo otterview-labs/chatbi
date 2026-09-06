@@ -796,6 +796,77 @@
         <a-button type="primary" :loading="featureSaving" @click="saveMailSettings">保存邮件配置</a-button>
       </div>
     </a-tab-pane>
+    <a-tab-pane key="report" tab="定时报告">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        <div>
+          <div style="font-weight:650; margin-bottom:8px;">报告列表</div>
+          <a-list :data-source="reports" bordered>
+            <template #renderItem="{ item }">
+              <a-list-item>
+                <div style="width:100%;">
+                  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+                    <div>
+                      <div style="font-weight:650;">{{ item.name }}</div>
+                      <div class="muted">{{ reportScheduleText(item) }}</div>
+                      <div class="muted" v-if="item.last_run_at">上次执行：{{ item.last_run_at }}（{{ item.last_status || '-' }}）</div>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+                      <a-button size="small" @click="editReport(item)">编辑</a-button>
+                      <a-button size="small" @click="downloadReport(item, 'pdf')">PDF</a-button>
+                      <a-button size="small" @click="downloadReport(item, 'pptx')">PPT</a-button>
+                      <a-button size="small" @click="sendReportNow(item)">发送</a-button>
+                      <a-button size="small" danger @click="deleteReport(item)">删除</a-button>
+                    </div>
+                  </div>
+                </div>
+              </a-list-item>
+            </template>
+          </a-list>
+        </div>
+        <div>
+          <div style="font-weight:650; margin-bottom:8px;">报告编辑</div>
+          <a-form layout="vertical">
+            <a-form-item label="名称">
+              <a-input v-model:value="reportForm.name" placeholder="如：每日消防态势报告" />
+            </a-form-item>
+            <a-form-item label="说明">
+              <a-input v-model:value="reportForm.description" />
+            </a-form-item>
+            <a-form-item label="问题清单（每行一个问题）">
+              <a-textarea v-model:value="reportForm.questionsText" :auto-size="{minRows:3,maxRows:8}" placeholder="各单位火警数量统计&#10;本月装备库存情况" />
+            </a-form-item>
+            <a-form-item label="数据源">
+              <a-select v-model:value="reportForm.datasource_ids" mode="multiple" :options="dataSources.map((d) => ({ label: d.name, value: d.id }))" placeholder="留空使用全部数据源" />
+            </a-form-item>
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
+              <a-form-item label="格式">
+                <a-checkbox-group v-model:value="reportForm.formats" :options="[{label:'PDF',value:'pdf'},{label:'PPT',value:'pptx'}]" />
+              </a-form-item>
+              <a-form-item label="定时发送">
+                <a-switch v-model:checked="reportForm.schedule.enabled" />
+              </a-form-item>
+              <a-form-item label="调度方式">
+                <a-select v-model:value="reportForm.schedule.type" style="width:120px;" :options="[{label:'每天',value:'daily'},{label:'按间隔',value:'interval'}]" />
+              </a-form-item>
+              <a-form-item label="发送时间" v-if="reportForm.schedule.type === 'daily'">
+                <a-input v-model:value="reportForm.schedule.time" style="width:100px;" placeholder="08:30" />
+              </a-form-item>
+              <a-form-item label="间隔（分钟）" v-else>
+                <a-input-number v-model:value="reportForm.schedule.interval_minutes" :min="5" style="width:110px;" />
+              </a-form-item>
+            </div>
+            <a-form-item label="收件人（逗号或换行分隔，留空用邮件默认收件人）">
+              <a-textarea v-model:value="reportForm.recipientsText" :auto-size="{minRows:2,maxRows:4}" />
+            </a-form-item>
+          </a-form>
+          <div class="muted">定时发送依赖“邮件通知”页的 SMTP 配置；也可在左侧手动生成 PDF/PPT 下载。</div>
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+            <a-button @click="resetReportForm">新建</a-button>
+            <a-button type="primary" :loading="featureSaving" @click="saveReport">保存报告</a-button>
+          </div>
+        </div>
+      </div>
+    </a-tab-pane>
   </a-tabs>
 </a-modal>
 
@@ -1194,6 +1265,21 @@ const mailSettings = ref({
 const mailRecipientsText = ref("");
 const showMailSend = ref(false);
 const mailSend = ref({ resultId: "", recipientsText: "", subject: "", message: "" });
+
+const reports = ref([]);
+function defaultReportForm() {
+  return {
+    id: "",
+    name: "",
+    description: "",
+    questionsText: "",
+    datasource_ids: [],
+    formats: ["pdf"],
+    recipientsText: "",
+    schedule: { enabled: false, type: "daily", time: "08:30", interval_minutes: 60 },
+  };
+}
+const reportForm = ref(defaultReportForm());
 
           const showAddSource = ref(false);
           const showAddTable = ref(false);
@@ -1780,9 +1866,122 @@ async function openFeatureSettings() {
   showFeatureSettings.value = true;
   featureTab.value = "chart";
   try {
-    await Promise.all([refreshCustomCharts(), refreshMailSettings()]);
+    await Promise.all([refreshCustomCharts(), refreshMailSettings(), refreshReports()]);
   } catch (e) {
     antd.message.error(e.message || "配置加载失败");
+  }
+}
+
+async function refreshReports() {
+  const res = await apiFetch("/reports");
+  reports.value = res.data || [];
+}
+
+function resetReportForm() {
+  reportForm.value = defaultReportForm();
+}
+
+function editReport(item) {
+  const s = item.schedule || {};
+  reportForm.value = {
+    id: item.id || "",
+    name: item.name || "",
+    description: item.description || "",
+    questionsText: (item.questions || []).join("\n"),
+    datasource_ids: [...(item.datasource_ids || [])],
+    formats: (item.formats || ["pdf"]).slice(),
+    recipientsText: (item.recipients || []).join("\n"),
+    schedule: {
+      enabled: !!s.enabled,
+      type: s.type || "daily",
+      time: s.time || "08:30",
+      interval_minutes: s.interval_minutes || 60,
+    },
+  };
+}
+
+function reportScheduleText(item) {
+  const s = item.schedule || {};
+  const count = (item.questions || []).length;
+  if (!s.enabled) return `${count} 个问题 · 未定时`;
+  return s.type === "interval" ? `${count} 个问题 · 每 ${s.interval_minutes} 分钟发送` : `${count} 个问题 · 每天 ${s.time} 发送`;
+}
+
+async function saveReport() {
+  const f = reportForm.value;
+  const questions = String(f.questionsText || "").split("\n").map((q) => q.trim()).filter(Boolean);
+  if (!questions.length) {
+    antd.message.warning("请至少填写一个问题");
+    return;
+  }
+  featureSaving.value = true;
+  try {
+    const payload = {
+      id: f.id || undefined,
+      name: f.name,
+      description: f.description,
+      questions,
+      datasource_ids: f.datasource_ids,
+      formats: f.formats && f.formats.length ? f.formats : ["pdf"],
+      recipients: splitRecipients(f.recipientsText),
+      schedule: { ...f.schedule },
+    };
+    const res = await apiFetch("/reports", { method: "POST", body: JSON.stringify(payload) });
+    reportForm.value.id = (res.data && res.data.id) || f.id;
+    await refreshReports();
+    antd.message.success("报告已保存");
+  } catch (e) {
+    antd.message.error(e.message || "保存失败");
+  } finally {
+    featureSaving.value = false;
+  }
+}
+
+async function deleteReport(item) {
+  try {
+    await apiFetch(`/reports/${item.id}`, { method: "DELETE" });
+    await refreshReports();
+    if (reportForm.value.id === item.id) resetReportForm();
+    antd.message.success("报告已删除");
+  } catch (e) {
+    antd.message.error(e.message || "删除失败");
+  }
+}
+
+async function downloadReport(item, fmt) {
+  try {
+    antd.message.loading({ content: "报告生成中…", key: "report-gen", duration: 0 });
+    const res = await fetch(`api/reports/${item.id}/generate?fmt=${fmt}`, {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try { detail = (await res.json()).detail || detail; } catch {}
+      throw new Error(detail);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${item.name || "report"}.${fmt}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    antd.message.success({ content: "报告已生成", key: "report-gen" });
+    await refreshReports();
+  } catch (e) {
+    antd.message.error({ content: e.message || "报告生成失败", key: "report-gen" });
+  }
+}
+
+async function sendReportNow(item) {
+  try {
+    antd.message.loading({ content: "报告生成并发送中…", key: "report-send", duration: 0 });
+    await apiFetch(`/reports/${item.id}/send`, { method: "POST", body: JSON.stringify({ recipients: [] }) });
+    antd.message.success({ content: "报告邮件已发送", key: "report-send" });
+    await refreshReports();
+  } catch (e) {
+    antd.message.error({ content: e.message || "发送失败", key: "report-send" });
   }
 }
 
@@ -3123,6 +3322,15 @@ function exportCsv(m) {
             saveCustomChart,
             deleteCustomChart,
             mailSettings,
+            reports,
+            reportForm,
+            resetReportForm,
+            editReport,
+            saveReport,
+            deleteReport,
+            downloadReport,
+            sendReportNow,
+            reportScheduleText,
             mailRecipientsText,
             saveMailSettings,
             sendTestMail,

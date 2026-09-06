@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import copy
+import difflib
 import hashlib
 import json
+import re
 import threading
 import time
 from pathlib import Path
@@ -14,11 +16,26 @@ _STORAGE = _ROOT / "storage" / "query_cache.json"
 _LOCK = threading.RLock()
 _DEFAULT_TTL_SECONDS = 1800
 _MAX_ITEMS = 200
+_SIMILAR_THRESHOLD = 0.9
+
+# 问句里的礼貌语/语气词不影响查询语义，归一化时剔除，让"请帮我查一下各单位火警数"
+# 与"各单位火警数"命中同一条缓存。
+_FILLER_RE = re.compile(
+    r"^(请问|请|麻烦|帮我|帮忙|给我|我想|我要)+|(查询|查一下|查查|看看|看一下|统计一下|统计)|(呢|吗|呀|啊|吧)+$"
+)
+_PUNCT_RE = re.compile(r"[\s，。！？、；：,.!?;:\"'“”‘’（）()]+")
+
+
+def normalize_question(question: str) -> str:
+    text = (question or "").strip().lower()
+    text = _PUNCT_RE.sub("", text)
+    text = _FILLER_RE.sub("", text)
+    return text or (question or "").strip().lower()
 
 
 def make_key(question: str, datasource_ids: Sequence[str], history: Sequence[dict] | None = None) -> str:
     payload = {
-        "question": (question or "").strip(),
+        "question": normalize_question(question),
         "datasource_ids": sorted(str(x) for x in datasource_ids),
         "history": list(history or [])[-6:],
     }
@@ -67,7 +84,12 @@ def get(key: str, ttl_seconds: int = _DEFAULT_TTL_SECONDS) -> dict[str, Any] | N
         return result
 
 
-def set(key: str, result: dict[str, Any], ttl_seconds: int = _DEFAULT_TTL_SECONDS) -> None:
+def set(
+    key: str,
+    result: dict[str, Any],
+    ttl_seconds: int = _DEFAULT_TTL_SECONDS,
+    datasource_ids: Sequence[str] | None = None,
+) -> None:
     if not key or not result.get("success"):
         return
     with _LOCK:
@@ -80,6 +102,8 @@ def set(key: str, result: dict[str, Any], ttl_seconds: int = _DEFAULT_TTL_SECOND
             "created_at": time.time(),
             "ttl_seconds": ttl_seconds,
             "question": stored.get("question"),
+            "question_norm": normalize_question(str(stored.get("question") or "")),
+            "datasource_ids": sorted(str(x) for x in datasource_ids or []),
             "sql": stored.get("sql"),
             "row_count": len(stored.get("data") or []),
             "result": stored,
@@ -89,6 +113,48 @@ def set(key: str, result: dict[str, Any], ttl_seconds: int = _DEFAULT_TTL_SECOND
             for old_key, _ in ordered[: len(items) - _MAX_ITEMS]:
                 items.pop(old_key, None)
         _save(data)
+
+
+def get_similar(
+    question: str,
+    datasource_ids: Sequence[str],
+    ttl_seconds: int = _DEFAULT_TTL_SECONDS,
+) -> dict[str, Any] | None:
+    """精确 key 未命中时的兜底：按归一化问题的相似度复用缓存（阈值 0.9，数据源须一致）。"""
+    qn = normalize_question(question)
+    if not qn:
+        return None
+    ds = sorted(str(x) for x in datasource_ids)
+    now = time.time()
+    with _LOCK:
+        data = _load()
+        best_key = None
+        best_ratio = 0.0
+        for key, item in data.get("items", {}).items():
+            created_at = float(item.get("created_at") or 0)
+            if ttl_seconds > 0 and now - created_at > ttl_seconds:
+                continue
+            item_ds = item.get("datasource_ids")
+            if item_ds and item_ds != ds:
+                continue
+            cand = item.get("question_norm") or normalize_question(str(item.get("question") or ""))
+            if not cand:
+                continue
+            ratio = difflib.SequenceMatcher(None, qn, cand).ratio()
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_key = key
+        if not best_key or best_ratio < _SIMILAR_THRESHOLD:
+            return None
+        matched = data["items"][best_key]
+        result = copy.deepcopy(matched.get("result") or {})
+        meta = result.setdefault("meta", {})
+        meta["cache_hit"] = True
+        meta["cache_key"] = best_key
+        meta["cache_created_at"] = float(matched.get("created_at") or 0)
+        meta["cache_similarity"] = round(best_ratio, 3)
+        meta["cache_matched_question"] = matched.get("question")
+        return result
 
 
 def stats(ttl_seconds: int = _DEFAULT_TTL_SECONDS) -> dict[str, Any]:

@@ -11,8 +11,8 @@ from typing import Any
 
 _IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _QUALIFIED_IDENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$")
-_VALID_DB_TYPES = {"sqlite", "mysql", "postgres"}
-_DB_TYPE_ALIASES = {"postgresql": "postgres", "pg": "postgres"}
+_VALID_DB_TYPES = {"sqlite", "mysql", "postgres", "clickhouse"}
+_DB_TYPE_ALIASES = {"postgresql": "postgres", "pg": "postgres", "ch": "clickhouse"}
 
 
 def validate_identifier(name: str, label: str) -> str:

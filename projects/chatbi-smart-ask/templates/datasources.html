@@ -409,7 +409,7 @@
           <a-form-item label="连接地址" v-if="addSource.db_type !== 'sqlite' && addSource.connection_mode !== 'manual'">
             <a-input
               v-model:value="addSource.db_url"
-              placeholder="mysql+pymysql://user:pass@host:3306/db 或 postgresql+psycopg://user:pass@host:5432/db"
+              placeholder="mysql+pymysql://user:pass@host:3306/db、postgresql+psycopg://user:pass@host:5432/db 或 clickhouse+http://user:pass@host:8123/db"
             />
           </a-form-item>
           <template v-if="addSource.db_type !== 'sqlite' && addSource.connection_mode === 'manual'">
@@ -417,7 +417,7 @@
               <a-input v-model:value="addSource.host" placeholder="例如：127.0.0.1" />
             </a-form-item>
             <a-form-item label="端口">
-              <a-input v-model:value="addSource.port" placeholder="MySQL默认3306，PG默认5432" />
+              <a-input v-model:value="addSource.port" placeholder="MySQL默认3306，PG默认5432，ClickHouse默认8123" />
             </a-form-item>
             <a-form-item label="数据库名">
               <a-input v-model:value="addSource.database" placeholder="例如：demo_db" />
@@ -681,6 +681,7 @@
             { label: "SQLite", value: "sqlite" },
             { label: "MySQL", value: "mysql" },
             { label: "PostgreSQL", value: "postgres" },
+            { label: "ClickHouse", value: "clickhouse" },
           ];
           const uploadRows = ref([]);
           const uploadColumns = ref([]);
@@ -793,6 +794,7 @@
           function defaultPortByDbType(dbType) {
             if (dbType === "mysql") return "3306";
             if (dbType === "postgres") return "5432";
+            if (dbType === "clickhouse") return "8123";
             return "";
           }
 
@@ -807,7 +809,12 @@
             const options = String((source && source.options) || "").trim().replace(/^\?+/, "");
             if (!host || !database || !username) return "";
 
-            const scheme = dbType === "mysql" ? "mysql+pymysql" : "postgresql+psycopg";
+            const schemeMap = {
+              mysql: "mysql+pymysql",
+              postgres: "postgresql+psycopg",
+              clickhouse: "clickhouse+http",
+            };
+            const scheme = schemeMap[dbType] || "postgresql+psycopg";
             const auth = password
               ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}`
               : encodeURIComponent(username);

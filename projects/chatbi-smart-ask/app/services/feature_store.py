@@ -180,6 +180,7 @@ class FeatureStore:
         subject: str,
         html: str,
         text: str,
+        attachments: list[tuple[str, bytes, str]] | None = None,
     ) -> dict[str, Any]:
         cfg = self.get_mail(sanitized=False)
         if not cfg.get("enabled"):
@@ -202,6 +203,14 @@ class FeatureStore:
         msg["To"] = ", ".join(targets)
         msg.set_content(text or "")
         msg.add_alternative(html or escape(text or ""), subtype="html")
+        for filename, content, mime in attachments or []:
+            maintype, _, subtype = (mime or "application/octet-stream").partition("/")
+            msg.add_attachment(
+                content,
+                maintype=maintype or "application",
+                subtype=subtype or "octet-stream",
+                filename=filename,
+            )
 
         port = int(cfg.get("smtp_port") or (465 if cfg.get("use_ssl") else 587))
         username = str(cfg.get("smtp_user") or "").strip()

@@ -6,6 +6,7 @@ from typing import Iterable
 
 from sqlalchemy import MetaData, Table, create_engine, inspect, select
 from sqlalchemy.engine import Engine, make_url
+from sqlalchemy.exc import NoSuchModuleError
 
 
 class RemoteDBError(RuntimeError):
@@ -29,10 +30,17 @@ def create_engine_from_url(db_url: str) -> Engine:
     connect_args = {}
     timeout_s = int(os.getenv("SMARTASK_DB_CONNECT_TIMEOUT_S", "5") or "5")
     if timeout_s > 0 and "connect_timeout" not in url.query:
-        if url.drivername.startswith(("postgresql", "mysql")):
+        if url.drivername.startswith(("postgresql", "mysql", "clickhouse")):
             connect_args["connect_timeout"] = timeout_s
 
-    return create_engine(db_url, pool_pre_ping=True, future=True, connect_args=connect_args)
+    try:
+        return create_engine(db_url, pool_pre_ping=True, future=True, connect_args=connect_args)
+    except (ModuleNotFoundError, NoSuchModuleError) as e:
+        if url.drivername.startswith("clickhouse"):
+            raise RemoteDBError(
+                "缺少 ClickHouse 驱动，请安装：pip install clickhouse-sqlalchemy"
+            ) from e
+        raise RemoteDBError(f"缺少数据库驱动（{url.drivername}）：{e}") from e
 
 
 def split_table_name(table_name: str) -> tuple[str | None, str]:

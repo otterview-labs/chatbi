@@ -20,6 +20,7 @@ from app.core.settings import get_settings, llm_runtime_status
 from app.routers.api import router as api_router
 from app.routers.data_dev import router as data_dev_router
 from app.routers.pages import router as pages_router
+from app.routers.reports import router as reports_router
 from app.services.demo_db import ensure_demo_db
 
 
@@ -376,11 +377,45 @@ def create_app() -> FastAPI:
     app.include_router(pages_router)
     app.include_router(api_router, prefix="/api")
     app.include_router(data_dev_router, prefix="/api/dev")
+    app.include_router(reports_router, prefix="/api/reports")
 
     @app.on_event("startup")
     def _startup() -> None:
         # 启动时确保演示库存在，这样首次拉起项目就能直接体验。
         ensure_demo_db(settings.demo_db_path)
+
+    @app.on_event("startup")
+    async def _start_report_scheduler() -> None:
+        # 定时报告调度：每 60 秒扫描一次到期报告，生成并邮件发送。
+        import asyncio
+        import logging
+
+        from app.services import report_store as report_service
+        from app.services.feature_store import feature_store
+        from app.services.query_engine import QueryEngine
+
+        logger = logging.getLogger("smartask.report_scheduler")
+
+        async def _loop() -> None:
+            while True:
+                try:
+                    for report in report_service.report_store.list_reports():
+                        if not report_service.is_due(report):
+                            continue
+                        rid = str(report.get("id") or "")
+                        try:
+                            engine = QueryEngine(settings=settings)
+                            await report_service.send_report(report, engine, feature_store)
+                            report_service.report_store.mark_run(rid, status="scheduled_sent")
+                            logger.info("定时报告已发送：%s", report.get("name"))
+                        except Exception as e:  # noqa: BLE001 - 单个报告失败不影响调度
+                            report_service.report_store.mark_run(rid, status="error", error=str(e))
+                            logger.warning("定时报告发送失败 %s：%s", report.get("name"), e)
+                except Exception:  # noqa: BLE001
+                    logger.exception("报告调度循环异常")
+                await asyncio.sleep(60)
+
+        asyncio.create_task(_loop())
 
     @app.get("/health")
     def health() -> dict:

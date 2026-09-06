@@ -719,7 +719,7 @@ class QueryEngine:
             return {"success": False, "error": "未选择可用数据源"}
 
         cache_key = query_cache.make_key(question, datasource_ids, history)
-        cached = query_cache.get(cache_key)
+        cached = query_cache.get(cache_key) or query_cache.get_similar(question, datasource_ids)
         if cached:
             return cached
 
@@ -746,7 +746,7 @@ class QueryEngine:
                 result["sql_explain"] = sql_explain
             result.setdefault("meta", {})["cache_hit"] = False
             result["meta"]["cache_key"] = cache_key
-            query_cache.set(cache_key, result)
+            query_cache.set(cache_key, result, datasource_ids=datasource_ids)
         return result
 
     async def ask_stream(
@@ -758,7 +758,7 @@ class QueryEngine:
             return
 
         cache_key = query_cache.make_key(question, datasource_ids, history)
-        cached = query_cache.get(cache_key)
+        cached = query_cache.get(cache_key) or query_cache.get_similar(question, datasource_ids)
         if cached:
             if cached.get("sql"):
                 yield {"type": "sql", "sql": cached.get("sql", "")}
@@ -828,7 +828,7 @@ class QueryEngine:
                 result["sql_explain"] = sql_explain
             result.setdefault("meta", {})["cache_hit"] = False
             result["meta"]["cache_key"] = cache_key
-            query_cache.set(cache_key, result)
+            query_cache.set(cache_key, result, datasource_ids=datasource_ids)
             analysis_text = (result.get("analysis") or "").strip()
             if analysis_text:
                 for ch in analysis_text:
