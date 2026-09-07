@@ -116,6 +116,20 @@ def _normalize_text(text: str) -> str:
     return re.sub(r"[\s\W_]+", "", (text or "").lower())
 
 
+_DATA_HINT_RE = re.compile(
+    r"(统计|数量|排名|排行|多少|平均|总数|总量|趋势|对比|分布|库存|明细|得分|占比|环比|同比|"
+    r"最高|最低|最多|最少|前\d+|top\s*\d+|按(月|周|日|年|天)|各(单位|站点|部门|区|类))",
+    re.IGNORECASE,
+)
+
+
+def _is_obvious_data_query(question: str) -> bool:
+    """含强数据信号词且不是寒暄的问题，直接走问数路径，省一次 LLM 意图分类调用。"""
+    if _is_smalltalk(question):
+        return False
+    return bool(_DATA_HINT_RE.search(question or ""))
+
+
 def _is_smalltalk(question: str) -> bool:
     text = _normalize_text(question)
     if not text:
@@ -757,7 +771,7 @@ async def chat(request: Request, payload: ChatRequest):
 
     settings = get_settings()
     engine = QueryEngine(settings=settings)
-    intent = await engine.classify_intent(question, payload.history)
+    intent = "data" if _is_obvious_data_query(question) else await engine.classify_intent(question, payload.history)
     if intent == "chat" or (intent == "unknown" and _is_smalltalk(question)):
         reply = await engine.chat(question, payload.history)
         if not reply:
@@ -797,7 +811,7 @@ async def chat_stream(request: Request, payload: ChatRequest):
 
     settings = get_settings()
     engine = QueryEngine(settings=settings)
-    intent = await engine.classify_intent(question, payload.history)
+    intent = "data" if _is_obvious_data_query(question) else await engine.classify_intent(question, payload.history)
 
     async def _stream_chat():
         success = True
