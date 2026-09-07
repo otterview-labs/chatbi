@@ -15,3 +15,8 @@ class LLMClient(Protocol):
 
     async def classify_intent(self, question: str, history: list[dict]) -> str:
         raise NotImplementedError
+
+    async def analyze_result(
+        self, question: str, sql: str, columns: list[str], rows: list[dict], row_count: int
+    ) -> str:
+        raise NotImplementedError

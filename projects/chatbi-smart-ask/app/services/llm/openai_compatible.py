@@ -160,6 +160,40 @@ class OpenAICompatibleLLM(LLMClient):
             return await self._responses(instructions=system_text, input_messages=input_messages)
         return await self._chat_completions(messages=messages, temperature=0.2, max_tokens=160)
 
+    async def analyze_result(
+        self, question: str, sql: str, columns: list[str], rows: list[dict], row_count: int
+    ) -> str:
+        if not self._base_url or not self._api_key:
+            raise RuntimeError("OpenAI兼容接口未配置：SMARTASK_OPENAI_BASE_URL / SMARTASK_OPENAI_API_KEY")
+
+        import json as _json
+
+        sample = _json.dumps(rows[:20], ensure_ascii=False, default=str)
+        user_content = (
+            f"问题：{(question or '').strip()}\n"
+            f"SQL：{(sql or '').strip()}\n"
+            f"总行数：{row_count}（下面是前 {min(len(rows), 20)} 行样本）\n"
+            f"字段：{'、'.join(columns)}\n"
+            f"数据样本：{sample}\n\n"
+            "请基于以上真实查询结果输出「数据洞察」，要求：\n"
+            "1) 3-5 条要点，每条 1 句，必须引用样本中的具体数值/名称。\n"
+            "2) 优先讲：最大/最小项、明显差距、占比或趋势、异常点。\n"
+            "3) 只依据给出的数据，禁止编造样本之外的数值。\n"
+            "4) 直接输出要点（以 - 开头），不要标题、不要输出推理过程。"
+        )
+        messages = [
+            {
+                "role": "system",
+                "content": "你是数据分析师，基于给定查询结果输出简洁的中文洞察要点。/no_think",
+            },
+            {"role": "user", "content": user_content},
+        ]
+        if self._wire_api == "responses":
+            system_text = str(messages[0].get("content") or "")
+            input_messages = [m for m in messages[1:] if m.get("content")]
+            return await self._responses(instructions=system_text, input_messages=input_messages)
+        return await self._chat_completions(messages=messages, temperature=0.3, max_tokens=300)
+
     async def generate_sql(self, prompt: str) -> str:
         if not self._base_url or not self._api_key:
             raise RuntimeError("OpenAI兼容接口未配置：SMARTASK_OPENAI_BASE_URL / SMARTASK_OPENAI_API_KEY")

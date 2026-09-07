@@ -590,6 +590,45 @@ class QueryEngine:
         sql = _enforce_limit(sql, self._settings.sql_max_rows)
         return sql, self._result_meta(sql_source=source, fallback_reason=fallback_reason or None)
 
+    async def _repair_sql(self, prompt: str, bad_sql: str, error: str) -> str:
+        """SQL 执行失败时把数据库报错回喂给 LLM 修复一次；仅 real_llm 模式生效。"""
+        if self._runtime["mode"] != "real_llm":
+            return ""
+        retry_prompt = (
+            f"{prompt}\n\n"
+            f"你上一次生成的SQL执行失败。\n"
+            f"失败SQL：{bad_sql}\n"
+            f"数据库错误：{error}\n"
+            "请根据错误信息修正后重新生成SQL："
+        )
+        try:
+            raw = await asyncio.wait_for(self._llm.generate_sql(retry_prompt), timeout=60)
+        except Exception:
+            return ""
+        sql = _extract_sql(raw)
+        if not sql or not _is_safe_select(sql) or sql.strip() == (bad_sql or "").strip():
+            return ""
+        return _enforce_limit(sql, self._settings.sql_max_rows)
+
+    async def _result_insight(self, question: str, result: dict) -> str:
+        """real_llm 模式下基于真实查询结果生成数据洞察；任何失败静默降级为空。"""
+        if self._runtime["mode"] != "real_llm":
+            return ""
+        rows = result.get("data") or []
+        if not rows or not isinstance(rows[0], dict):
+            return ""
+        analyze = getattr(self._llm, "analyze_result", None)
+        if analyze is None:
+            return ""
+        try:
+            text = await asyncio.wait_for(
+                analyze(question, result.get("sql") or "", list(rows[0].keys()), rows[:20], len(rows)),
+                timeout=18,
+            )
+            return (text or "").strip()
+        except Exception:
+            return ""
+
     def _table_alias(self, datasource: _Datasource, table: str) -> str:
         if datasource.db_type == "sqlite" and datasource.db_path == self._db_path:
             return table
@@ -681,7 +720,9 @@ class QueryEngine:
             "2) 时间戳字段create_time为毫秒，转换: datetime(create_time/1000,'unixepoch','localtime')\n"
             "3) 尽量给字段起中文别名\n"
             f"4) 仅允许访问这些表：{', '.join(allowed_names)}\n"
-            f"5) 必须带 LIMIT，且不超过 {self._settings.sql_max_rows}\n\n"
+            f"5) 必须带 LIMIT，且不超过 {self._settings.sql_max_rows}\n"
+            "6) 只能使用表结构中真实存在的字段；若问题所需的字段/口径在表结构中不存在，"
+            "禁止用无关字段拼凑近似结果，改为返回：SELECT '无法回答：<说明缺少什么字段>' AS 提示\n\n"
             f"表结构：\n{schema}\n\n"
             + (f"对话历史：\n{history_text}\n\n" if history_text else "")
             + f"问题：{question}\n\nSQL："
@@ -740,10 +781,27 @@ class QueryEngine:
             question=question,
             meta=meta,
         )
+        if not result.get("success") and (meta or {}).get("sql_source") in {"llm", "agent"}:
+            fixed_sql = await self._repair_sql(prompt, sql, str(result.get("error") or ""))
+            if fixed_sql:
+                retry_result = await self.run_sql(
+                    sql=fixed_sql,
+                    datasource_ids=datasource_ids,
+                    question=question,
+                    meta=self._result_meta(sql_source="llm_retry", fallback_reason="sql_exec_failed_retry"),
+                )
+                if retry_result.get("success"):
+                    result = retry_result
+
         if result.get("success"):
-            sql_explain = await asyncio.wait_for(self.explain_sql(question, result.get("sql") or ""), timeout=18)
+            sql_explain, insight = await asyncio.gather(
+                asyncio.wait_for(self.explain_sql(question, result.get("sql") or ""), timeout=18),
+                self._result_insight(question, result),
+            )
             if sql_explain:
                 result["sql_explain"] = sql_explain
+            if insight:
+                result["analysis"] = (result.get("analysis") or "").rstrip() + "\n\n数据洞察：\n" + insight
             result.setdefault("meta", {})["cache_hit"] = False
             result["meta"]["cache_key"] = cache_key
             query_cache.set(cache_key, result, datasource_ids=datasource_ids)
@@ -823,9 +881,26 @@ class QueryEngine:
             yield {"type": "error", "error": msg}
             return
 
+        if not result.get("success") and (meta or {}).get("sql_source") in {"llm", "agent"}:
+            fixed_sql = await self._repair_sql(prompt, sql, str(result.get("error") or ""))
+            if fixed_sql:
+                retry_result = await self.run_sql(
+                    sql=fixed_sql,
+                    datasource_ids=datasource_ids,
+                    question=question,
+                    meta=self._result_meta(sql_source="llm_retry", fallback_reason="sql_exec_failed_retry"),
+                )
+                if retry_result.get("success"):
+                    result = retry_result
+                    sql = fixed_sql
+                    yield {"type": "sql", "sql": fixed_sql}
+
         if result.get("success"):
             if sql_explain and not result.get("sql_explain"):
                 result["sql_explain"] = sql_explain
+            insight = await self._result_insight(question, result)
+            if insight:
+                result["analysis"] = (result.get("analysis") or "").rstrip() + "\n\n数据洞察：\n" + insight
             result.setdefault("meta", {})["cache_hit"] = False
             result["meta"]["cache_key"] = cache_key
             query_cache.set(cache_key, result, datasource_ids=datasource_ids)
