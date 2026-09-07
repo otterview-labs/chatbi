@@ -1106,7 +1106,8 @@ async def drilldown(request: Request, payload: DrilldownRequest):
             "datetime(create_time/1000,'unixepoch','localtime') AS 报警时间 "
             "FROM fire_alarm_record "
         )
-        if "月份" in field:
+        # 列别名由 LLM 生成（月份/年月/月度…），按字段名或值形态（YYYY-MM）识别月份下钻。
+        if "月" in field or re.fullmatch(r"\d{4}-\d{2}", value):
             sql = (
                 base_select
                 + "WHERE strftime('%Y-%m', datetime(create_time/1000,'unixepoch','localtime')) = "

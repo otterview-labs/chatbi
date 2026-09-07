@@ -240,13 +240,21 @@ def main() -> int:
         result_id = chat_query.get('result_id')
         sql_text = chat_query.get('sql') or ''
         rows = chat_query.get('data') or []
-        first_month = str((rows[0] or {}).get('月份') or '') if rows else ''
+        # 列别名由 LLM 生成（月份/年月等），不做硬编码：取第一行第一个文本列做下钻。
+        month_field = ''
+        first_month = ''
+        if rows and isinstance(rows[0], dict):
+            for key, value in rows[0].items():
+                if isinstance(value, str) and value:
+                    month_field = key
+                    first_month = value
+                    break
         check(status == 200 and chat_query.get('success') is True and bool(result_id) and bool(sql_text) and bool(first_month), '查询问答正常并返回结果ID')
 
         status, drilldown = client.request_json(
             '/api/drilldown',
             method='POST',
-            payload={'result_id': result_id, 'field': '月份', 'value': first_month},
+            payload={'result_id': result_id, 'field': month_field, 'value': first_month},
         )
         check(status == 200 and drilldown.get('success') is True and bool(drilldown.get('data')), '下钻接口正常')
 
