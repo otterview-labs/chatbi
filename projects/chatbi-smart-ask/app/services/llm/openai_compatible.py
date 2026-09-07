@@ -20,19 +20,31 @@ def _normalize_wire_api(value: str) -> str:
 
 
 class OpenAICompatibleLLM(LLMClient):
-    def __init__(self, base_url: str, api_key: str, model: str, *, wire_api: str = "chat_completions") -> None:
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        *,
+        wire_api: str = "chat_completions",
+        sql_model: str = "",
+    ) -> None:
         base = (base_url or "").strip().rstrip("/")
         if base.lower().endswith("/v1"):
             base = base[:-3]
         self._base_url = base.rstrip("/")
         self._api_key = api_key
         self._model = model
+        # SQL 生成可用单独的代码模型；留空复用通用模型。
+        self._sql_model = (sql_model or "").strip()
         self._wire_api = _normalize_wire_api(wire_api)
 
-    async def _chat_completions(self, *, messages: list[dict], max_tokens: int, temperature: float) -> str:
+    async def _chat_completions(
+        self, *, messages: list[dict], max_tokens: int, temperature: float, model: str = ""
+    ) -> str:
         url = f"{self._base_url}/v1/chat/completions"
         payload = {
-            "model": self._model,
+            "model": model or self._model,
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -178,7 +190,7 @@ class OpenAICompatibleLLM(LLMClient):
             "请基于以上真实查询结果输出「数据洞察」，要求：\n"
             "1) 3-5 条要点，每条 1 句，必须引用样本中的具体数值/名称。\n"
             "2) 优先讲：最大/最小项、明显差距、占比或趋势、异常点。\n"
-            "3) 只依据给出的数据，禁止编造样本之外的数值。\n"
+            "3) 只依据给出的数据，禁止编造样本之外的数值；小数最多保留两位。\n"
             "4) 直接输出要点（以 - 开头），不要标题、不要输出推理过程。"
         )
         messages = [
@@ -209,7 +221,9 @@ class OpenAICompatibleLLM(LLMClient):
             system_text = str(messages[0].get("content") or "")
             input_messages = [m for m in messages[1:] if m.get("content")]
             return await self._responses(instructions=system_text, input_messages=input_messages)
-        return await self._chat_completions(messages=messages, temperature=0.1, max_tokens=220)
+        return await self._chat_completions(
+            messages=messages, temperature=0.1, max_tokens=220, model=self._sql_model
+        )
 
     async def classify_intent(self, question: str, history: list[dict]) -> str:
         if not self._base_url or not self._api_key:

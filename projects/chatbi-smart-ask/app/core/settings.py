@@ -49,6 +49,8 @@ class Settings:
     openai_base_url: str = os.getenv("SMARTASK_OPENAI_BASE_URL", "")
     openai_api_key: str = os.getenv("SMARTASK_OPENAI_API_KEY", "")
     openai_model: str = os.getenv("SMARTASK_OPENAI_MODEL", "gpt-4o-mini")
+    # SQL 生成可单独指定代码模型（如 qwen3-coder-plus）；留空则复用 openai_model。
+    openai_sql_model: str = os.getenv("SMARTASK_OPENAI_SQL_MODEL", "")
     openai_wire_api: str = os.getenv("SMARTASK_OPENAI_WIRE_API", "chat_completions")
     agent_endpoint: str = os.getenv("SMARTASK_AGENT_ENDPOINT", "")
     agent_api_key: str = os.getenv("SMARTASK_AGENT_API_KEY", "")

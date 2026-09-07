@@ -528,6 +528,7 @@ class QueryEngine:
                 api_key=settings.openai_api_key,
                 model=settings.openai_model,
                 wire_api=getattr(settings, "openai_wire_api", "chat_completions"),
+                sql_model=getattr(settings, "openai_sql_model", ""),
             )
         elif self._runtime["provider"] == "agent_http" and self._runtime["ready"]:
             self._llm = AgentHTTPLLM(
@@ -722,7 +723,9 @@ class QueryEngine:
             f"4) 仅允许访问这些表：{', '.join(allowed_names)}\n"
             f"5) 必须带 LIMIT，且不超过 {self._settings.sql_max_rows}\n"
             "6) 只能使用表结构中真实存在的字段；若问题所需的字段/口径在表结构中不存在，"
-            "禁止用无关字段拼凑近似结果，改为返回：SELECT '无法回答：<说明缺少什么字段>' AS 提示\n\n"
+            "禁止用无关字段拼凑近似结果，改为返回：SELECT '无法回答：<说明缺少什么字段>' AS 提示\n"
+            "7) 跨表计算比值/人均/占比时，必须先在子查询中分别对每张表按关联键聚合，"
+            "再 JOIN 聚合结果相除；禁止直接 JOIN 明细表后聚合（一对多会因笛卡尔积放大数值）\n\n"
             f"表结构：\n{schema}\n\n"
             + (f"对话历史：\n{history_text}\n\n" if history_text else "")
             + f"问题：{question}\n\nSQL："
