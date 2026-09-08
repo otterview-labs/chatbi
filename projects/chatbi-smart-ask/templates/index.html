@@ -348,6 +348,7 @@
       .ant-segmented { background: var(--surface2); border-radius: var(--radius-sm); }
       .ant-table { border-radius: var(--radius); overflow: hidden; }
       .ant-btn { border-radius: var(--radius-sm); box-shadow: none; }
+      .btn-with-icon { display: inline-flex; align-items: center; gap: 6px; }
       .ant-btn-primary {
         border: none;
         background: var(--primary);
@@ -498,20 +499,22 @@
     <div class="shell">
       <aside class="sidebar">
         <div class="side-brand">
+          <div class="side-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" width="16" height="16"><line x1="6" y1="17" x2="6" y2="11"/><line x1="12" y1="17" x2="12" y2="7"/><line x1="18" y1="17" x2="18" y2="13"/></svg></div>
           <div>
             <div class="side-title">智能问数</div>
           </div>
         </div>
         <nav class="side-nav">
-          <a class="side-link active" href="./"><span>智能问数</span><span class="side-badge">AI</span></a>
-          <a class="side-link" href="./datasources"><span>数据源</span><span class="side-badge">DATA</span></a>
-          <a class="side-link" href="./data-dev"><span>数据开发</span><span class="side-badge">DEV</span></a>
-          <a class="side-link" href="./dashboard"><span>图表大屏</span><span class="side-badge">BI</span></a>
+          <a class="side-link active" href="./"><span class="side-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M4 5 H20 V15 H9 L5 19 V15 H4 Z"/></svg></span><span class="side-link-label">智能问数</span><span class="side-badge">AI</span></a>
+          <a class="side-link" href="./datasources"><span class="side-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="4" y="3" width="16" height="5" rx="1.3"/><rect x="4" y="9.5" width="16" height="5" rx="1.3"/><rect x="4" y="16" width="16" height="5" rx="1.3"/></svg></span><span class="side-link-label">数据源</span><span class="side-badge">DATA</span></a>
+          <a class="side-link" href="./data-dev"><span class="side-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><line x1="6" y1="8" x2="6" y2="16"/><line x1="8" y1="7" x2="16" y2="11"/><line x1="8" y1="17" x2="16" y2="13"/></svg></span><span class="side-link-label">数据开发</span><span class="side-badge">DEV</span></a>
+          <a class="side-link" href="./dashboard"><span class="side-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="4" y="10" width="4" height="9" rx="0.8"/><rect x="10" y="5" width="4" height="14" rx="0.8"/><rect x="16" y="13" width="4" height="6" rx="0.8"/></svg></span><span class="side-link-label">图表大屏</span><span class="side-badge">BI</span></a>
         </nav>
       </aside>
       <div id="app" class="app shell-content" v-cloak>
       <div class="header">
         <div class="brand">
+          <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" width="16" height="16"><line x1="6" y1="17" x2="6" y2="11"/><line x1="12" y1="17" x2="12" y2="7"/><line x1="18" y1="17" x2="18" y2="13"/></svg></div>
           <div>
             <div class="brand-title" data-brand="productName">{{ brand.productName }}</div>
             </div>
