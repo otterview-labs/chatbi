@@ -31,18 +31,30 @@
 
     <style>
       :root {
-        --bg: #f8fafc;
-        --text: #0f172a;
-        --muted: #64748b;
-        --border: rgba(15, 23, 42, 0.10);
-        --surface: rgba(255, 255, 255, 0.82);
-        --surface2: rgba(255, 255, 255, 0.62);
-        --shadow: 0 18px 60px rgba(15, 23, 42, 0.12);
-        --shadow-sm: 0 14px 42px rgba(15, 23, 42, 0.10);
-        --radius: 16px;
-        --primary: #2563eb;
-        --primary2: #06b6d4;
-        --accent: #22c55e;
+        --ink-900: #171717;
+        --ink-800: #27364a;
+        --ink-700: #344054;
+        --ink-600: #6b7280;
+        --ink-500: #8a97a8;
+        --bg: #f5f7fa;
+        --text: var(--ink-900);
+        --muted: var(--ink-600);
+        --border: #e5e9f0;
+        --border-strong: #d9d9d9;
+        --surface: #ffffff;
+        --surface2: #f8fafc;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 0 rgba(15, 23, 42, 0.03);
+        --shadow-md: 0 2px 8px rgba(15, 23, 42, 0.06);
+        --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.10);
+        --radius-sm: 6px;
+        --radius: 8px;
+        --radius-lg: 10px;
+        --primary: #1677ff;
+        --primary2: #1677ff;
+        --primary-hover: #0958d9;
+        --primary-soft: #e6f4ff;
+        --primary-border: #91caff;
+        --accent: #16a34a;
       }
 
       [v-cloak] { display: none; }
@@ -50,15 +62,15 @@
         flex: 1;
         min-width: 0;
         margin: 18px;
-        border-radius: 16px;
-        border: 1px solid rgba(15, 23, 42, 0.10);
-        background: rgba(255, 255, 255, 0.82);
-        box-shadow: var(--shadow);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
         height: calc(100vh - 74px - 36px);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748b;
+        color: var(--muted);
         font-size: 13px;
       }
       #app:not([v-cloak]) + .boot-loading { display: none; }
@@ -68,10 +80,7 @@
       body {
         margin: 0;
         color: var(--text);
-        background:
-          radial-gradient(1200px circle at 10% -10%, rgba(37, 99, 235, 0.14) 0%, rgba(37, 99, 235, 0) 60%),
-          radial-gradient(900px circle at 100% 0%, rgba(6, 182, 212, 0.10) 0%, rgba(6, 182, 212, 0) 55%),
-          linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        background: var(--bg);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
       }
 
@@ -81,42 +90,60 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        height: 72px;
+        height: 60px;
         background: var(--surface);
-        backdrop-filter: blur(12px);
         border-bottom: 1px solid var(--border);
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0 20px;
       }
-      .header::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--primary) 0%, var(--primary2) 55%, var(--accent) 100%);
-      }
       .header > * { position: relative; }
 
-      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand { display: flex; align-items: center; gap: 10px; }
       .logo {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%);
-        box-shadow: 0 16px 36px rgba(79, 70, 229, 0.28);
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-sm);
+        background: var(--primary);
         display:flex;
         align-items:center;
         justify-content:center;
         color:#fff;
-        font-weight: 900;
-        letter-spacing: 0.6px;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.2px;
       }
-      .brand-title { font-weight: 800; color: var(--text); letter-spacing: 0.2px; }
+      .brand-title { font-weight: 650; color: var(--text); letter-spacing: -0.01em; font-size: 15px; }
       .muted { color: var(--muted); font-size: 12px; }
+
+      /* light shell override：与侧边栏基础暗色保持区分，页面内容区用扁平浅色 */
+      .sidebar { background: var(--surface2); border-right: 1px solid var(--border); }
+      .side-brand { border: none; background: transparent; box-shadow: none; padding: 6px 10px 14px; }
+      .side-logo { background: var(--primary); border-radius: var(--radius-sm); box-shadow: none; }
+      .side-title { color: var(--text); }
+      .side-sub { color: var(--muted); }
+      .side-link {
+        color: var(--ink-700);
+        border: 1px solid transparent;
+        background: transparent;
+        box-shadow: none;
+        border-radius: var(--radius-sm);
+        border-left: 2px solid transparent;
+        transition: background .12s ease, color .12s ease;
+      }
+      .side-link:hover { transform: none; border-color: transparent; box-shadow: none; background: var(--surface); color: var(--primary); }
+      .side-link.active {
+        border-color: transparent;
+        border-left-color: var(--primary);
+        background: var(--primary-soft);
+        box-shadow: none;
+        color: var(--primary-hover);
+        font-weight: 650;
+      }
+      .side-badge { color: var(--primary); background: var(--primary-soft); border-color: var(--primary-border); }
+      .side-tip { border-color: var(--border); background: var(--surface); color: var(--muted); }
+      .side-tip b { color: var(--text); }
 
       .main {
         flex: 1;
@@ -136,87 +163,89 @@
         overflow: hidden;
       }
       .card-hd {
-        padding: 14px 16px;
-        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--border);
         display:flex;
         align-items:center;
         justify-content: space-between;
-        background: rgba(255, 255, 255, 0.62);
+        background: var(--surface);
       }
       .card-bd { padding: 16px; }
 
-      .ds-list { display:flex; flex-direction:column; gap: 10px; }
+      .ds-list { display:flex; flex-direction:column; gap: 8px; }
       .ds-item {
         display:flex;
         flex-direction: column;
         gap: 6px;
         padding: 10px 12px;
         border: 1px solid var(--border);
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.72);
-        transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        transition: border-color .12s ease, background .12s ease;
       }
-      .ant-checkbox-wrapper:hover .ds-item {
-        transform: translateY(-1px);
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.10);
-      }
+      .ant-checkbox-wrapper:hover .ds-item { border-color: var(--primary-border); }
       .ant-checkbox-wrapper-checked .ds-item {
-        border-color: rgba(37, 99, 235, 0.35);
-        box-shadow: 0 16px 36px rgba(37, 99, 235, 0.14);
+        border-color: var(--primary-border);
+        background: var(--primary-soft);
       }
-      .ds-title { font-weight: 750; display:flex; align-items:center; gap: 8px; }
+      .ds-title { font-weight: 600; display:flex; align-items:center; gap: 8px; }
       .badge {
         font-size: 12px;
-        padding: 2px 8px;
-        border-radius: 999px;
-        background: rgba(37, 99, 235, 0.08);
+        padding: 1px 8px;
+        border-radius: var(--radius-sm);
+        background: var(--primary-soft);
         color: var(--primary);
-        border: 1px solid rgba(37, 99, 235, 0.18);
+        border: 1px solid var(--primary-border);
       }
       .ds-desc { color: var(--muted); font-size: 12px; }
-      .ds-skel { height: 64px; border-radius: 14px; background: linear-gradient(90deg, rgba(15,23,42,0.04) 0%, rgba(15,23,42,0.08) 35%, rgba(15,23,42,0.04) 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid rgba(15,23,42,0.08); }
+      .ds-skel { height: 64px; border-radius: var(--radius-sm); background: linear-gradient(90deg, #f1f3f6 0%, #eceff3 35%, #f1f3f6 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid var(--border); }
 
       .kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
       .kpi {
         padding: 10px 12px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.72);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
         border: 1px solid var(--border);
-        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
-        transition: transform .12s ease, border-color .12s ease;
+        border-top: 2px solid var(--primary);
+        box-shadow: var(--shadow-sm);
+        transition: border-color .12s ease, box-shadow .12s ease;
       }
-      .kpi:hover { transform: translateY(-1px); border-color: rgba(37, 99, 235, 0.25); }
+      .kpi:hover { border-color: var(--primary-border); box-shadow: var(--shadow-md); }
       .kpi-label { color: var(--muted); font-size: 12px; display:flex; align-items:center; justify-content:space-between; gap: 8px; }
-      .kpi-value { font-size: 18px; font-weight: 900; letter-spacing: .2px; margin-top: 6px; }
+      .kpi-value { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin-top: 6px; }
       .kpi-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
-      .kpi-skeleton { height: 54px; border-radius: 14px; background: linear-gradient(90deg, rgba(15,23,42,0.04) 0%, rgba(15,23,42,0.08) 35%, rgba(15,23,42,0.04) 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid rgba(15,23,42,0.08); }
+      .kpi-skeleton { height: 54px; border-radius: var(--radius-sm); background: linear-gradient(90deg, #f1f3f6 0%, #eceff3 35%, #f1f3f6 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid var(--border); }
       @keyframes shimmer { 0% { background-position: 0% 0; } 100% { background-position: -200% 0; } }
 
       .examples { display:flex; flex-wrap: wrap; gap: 8px; }
-      .ex-tag { cursor: pointer; border-radius: 999px; user-select: none; }
-      .ex-tag:hover { color: var(--primary); border-color: rgba(37, 99, 235, 0.28); }
-      .tag-skel { height: 28px; border-radius: 999px; background: linear-gradient(90deg, rgba(15,23,42,0.04) 0%, rgba(15,23,42,0.08) 35%, rgba(15,23,42,0.04) 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid rgba(15,23,42,0.08); }
+      .ex-tag { cursor: pointer; border-radius: var(--radius-sm); user-select: none; }
+      .ex-tag:hover { color: var(--primary); border-color: var(--primary-border); background: var(--primary-soft); }
+      .tag-skel { height: 28px; border-radius: var(--radius-sm); background: linear-gradient(90deg, #f1f3f6 0%, #eceff3 35%, #f1f3f6 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid var(--border); }
 
-      .ant-btn { border-radius: 12px; }
+      .ant-btn { border-radius: var(--radius-sm); box-shadow: none; }
       .ant-btn-primary {
         border: none;
-        background: linear-gradient(135deg, var(--primary) 0%, var(--primary2) 100%);
+        background: var(--primary);
+        box-shadow: var(--shadow-sm);
       }
+      .ant-btn-primary:hover { background: var(--primary-hover) !important; box-shadow: 0 4px 12px rgba(22, 119, 255, 0.24) !important; }
+      .ant-btn-primary:active { transform: translateY(1px); }
       .ant-btn-default {
-        background: rgba(255, 255, 255, 0.82);
-        border-color: rgba(15, 23, 42, 0.14);
+        background: var(--surface);
+        border-color: var(--border-strong);
         color: var(--text);
       }
-      .ant-input, .ant-input-affix-wrapper { border-radius: 12px; }
+      .ant-btn-default:hover { border-color: var(--primary-border); color: var(--primary); }
+      .ant-input, .ant-input-affix-wrapper { border-radius: var(--radius-sm); }
       .ant-input, .ant-input-affix-wrapper {
-        background: rgba(255, 255, 255, 0.82);
-        border-color: rgba(15, 23, 42, 0.14);
+        background: var(--surface);
+        border-color: var(--border-strong);
         color: var(--text);
       }
       .ant-tag {
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.82);
-        border-color: rgba(15, 23, 42, 0.12);
+        border-radius: var(--radius-sm);
+        background: var(--surface2);
+        border-color: var(--border);
         color: var(--text);
       }
 
