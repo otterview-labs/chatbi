@@ -522,7 +522,7 @@
 
         <div style="display:flex; align-items:center; gap: 10px;">
           <a-button type="primary" :loading="demoRunning" :disabled="!me" @click="runDemo">一键问数</a-button>
-          <a-button type="default" :disabled="busy || !me" @click="confirmResetDb">重置数据</a-button>
+          <a-button type="default" :disabled="busy || !me" @click="confirmResetDb">清空数据</a-button>
           <template v-if="me">
             <a-tag :color="runtimeModeColor">{{ runtimeModeLabel }}</a-tag>
             <a-dropdown placement="bottomRight" :trigger="['click']">
@@ -3233,9 +3233,9 @@ async function sendResultMail() {
           function confirmResetDb() {
             try {
               antd.Modal.confirm({
-                title: "确认重置数据？",
-                content: "将重建本地SQLite库（警情/人员/装备/监督检查）。适合需要时一键恢复初始数据。",
-                okText: "重置",
+                title: "确认清空数据？",
+                content: "将清空本地SQLite库（警情/人员/装备/监督检查），恢复为空表，不会重新生成演示数据。",
+                okText: "清空",
                 cancelText: "取消",
                 onOk: resetDb,
               });

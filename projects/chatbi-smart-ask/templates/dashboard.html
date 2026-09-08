@@ -31,17 +31,27 @@
 
     <style>
       :root {
-        --bg: #070a14;
-        --text: rgba(229, 231, 235, 0.92);
-        --muted: rgba(229, 231, 235, 0.72);
-        --border: rgba(255, 255, 255, 0.12);
-        --surface: rgba(255, 255, 255, 0.06);
-        --surface2: rgba(255, 255, 255, 0.04);
-        --shadow: 0 22px 64px rgba(0, 0, 0, 0.45);
-        --radius: 16px;
-        --primary: #7c3aed;
-        --accent: #06b6d4;
-        --good: #22c55e;
+        --ink-900: #171717;
+        --ink-700: #344054;
+        --ink-600: #6b7280;
+        --ink-500: #8a97a8;
+        --bg: #f5f7fa;
+        --text: var(--ink-900);
+        --muted: var(--ink-600);
+        --border: #e5e9f0;
+        --border-strong: #d9d9d9;
+        --surface: #ffffff;
+        --surface2: #f8fafc;
+        --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 0 rgba(15, 23, 42, 0.03);
+        --shadow-md: 0 2px 8px rgba(15, 23, 42, 0.06);
+        --radius-sm: 6px;
+        --radius: 8px;
+        --primary: #1677ff;
+        --primary-hover: #0958d9;
+        --primary-soft: #e6f4ff;
+        --primary-border: #91caff;
+        --accent: #1677ff;
+        --good: #16a34a;
       }
 
       * { box-sizing: border-box; }
@@ -49,20 +59,45 @@
       body {
         margin: 0;
         color: var(--text);
-        background:
-          radial-gradient(1000px circle at 10% -10%, rgba(124, 58, 237, 0.38) 0%, rgba(124, 58, 237, 0) 60%),
-          radial-gradient(900px circle at 100% 0%, rgba(6, 182, 212, 0.26) 0%, rgba(6, 182, 212, 0) 55%),
-          linear-gradient(180deg, #070a14 0%, #0b1220 55%, #070a14 100%);
+        background: var(--bg);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
       }
 
       .muted { color: var(--muted); font-size: 12px; }
 
+      /* light shell override：与其余三页同一套扁平设计语言 */
+      .sidebar { background: var(--surface2); border-right: 1px solid var(--border); }
+      .side-brand { border: none; background: transparent; box-shadow: none; padding: 6px 10px 14px; }
+      .side-logo { background: var(--primary); border-radius: var(--radius-sm); box-shadow: none; }
+      .side-title { color: var(--text); }
+      .side-sub { color: var(--muted); }
+      .side-link {
+        color: var(--ink-700);
+        border: 1px solid transparent;
+        background: transparent;
+        box-shadow: none;
+        border-radius: var(--radius-sm);
+        border-left: 2px solid transparent;
+        transition: background .12s ease, color .12s ease;
+      }
+      .side-link:hover { transform: none; border-color: transparent; box-shadow: none; background: var(--surface); color: var(--primary); }
+      .side-link.active {
+        border-color: transparent;
+        border-left-color: var(--primary);
+        background: var(--primary-soft);
+        box-shadow: none;
+        color: var(--primary-hover);
+        font-weight: 650;
+      }
+      .side-badge { color: var(--primary); background: var(--primary-soft); border-color: var(--primary-border); }
+      .side-tip { border-color: var(--border); background: var(--surface); color: var(--muted); }
+      .side-tip b { color: var(--text); }
+
       .hd {
         position: sticky;
         top: 0;
         z-index: 10;
-        min-height: 72px;
+        min-height: 60px;
         flex-wrap: wrap;
         row-gap: 8px;
         padding-top: 10px;
@@ -72,23 +107,13 @@
         justify-content: space-between;
         gap: 16px;
         padding: 0 20px;
-        background: rgba(7, 10, 20, 0.72);
-        backdrop-filter: blur(12px);
+        background: var(--surface);
         border-bottom: 1px solid var(--border);
-      }
-      .hd::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 70%, var(--good) 100%);
       }
       .hd > * { position: relative; }
 
       .title-row { display:flex; align-items:center; gap: 10px; flex-wrap: wrap; }
-      .title { font-size: 18px; font-weight: 900; letter-spacing: 0.4px; }
+      .title { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
       .actions { display:flex; gap: 10px; flex-wrap: wrap; justify-content:flex-end; }
 
       .grid {
@@ -109,49 +134,42 @@
         gap: 12px;
       }
       .kpi {
-        border-radius: 16px;
-        border: 1px solid rgba(255,255,255,0.12);
-        background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.04) 100%);
-        box-shadow: var(--shadow);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        border-top: 2px solid var(--primary);
+        background: var(--surface);
+        box-shadow: var(--shadow-sm);
         padding: 12px 14px;
         overflow: hidden;
         position: relative;
       }
-      .kpi::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(600px circle at 10% 0%, rgba(124, 58, 237, 0.18) 0%, rgba(124, 58, 237, 0) 55%);
-        opacity: 0.7;
-        pointer-events: none;
-      }
       .kpi > * { position: relative; }
       .kpi-label { display:flex; align-items:center; justify-content:space-between; gap: 10px; color: var(--muted); font-size: 12px; }
-      .kpi-value { margin-top: 6px; font-size: 22px; font-weight: 950; letter-spacing: .2px; }
-      .kpi-sub { margin-top: 2px; color: rgba(229, 231, 235, 0.62); font-size: 11px; }
-      .kpi-skel { height: 86px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.10); background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.10) 40%, rgba(255,255,255,0.05) 80%); background-size: 200% 100%; animation: shimmer 1.1s infinite; }
+      .kpi-value { margin-top: 6px; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+      .kpi-sub { margin-top: 2px; color: var(--muted); font-size: 11px; }
+      .kpi-skel { height: 86px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: linear-gradient(90deg, #f1f3f6 0%, #eceff3 40%, #f1f3f6 80%); background-size: 200% 100%; animation: shimmer 1.1s infinite; }
       @keyframes shimmer { 0% { background-position: 0% 0; } 100% { background-position: -200% 0; } }
 
       .card {
-        background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.04) 100%);
-        border: 1px solid rgba(255,255,255,0.12);
+        background: var(--surface);
+        border: 1px solid var(--border);
         border-radius: var(--radius);
         overflow:hidden;
-        box-shadow: var(--shadow);
+        box-shadow: var(--shadow-sm);
       }
-      .card:hover { border-color: rgba(124, 58, 237, 0.32); }
+      .card:hover { border-color: var(--primary-border); }
       .card-hd {
         padding: 12px 14px;
         display:flex;
         align-items:center;
         justify-content: space-between;
         gap: 12px;
-        border-bottom: 1px solid rgba(255,255,255,0.10);
-        background: rgba(255,255,255,0.04);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
       }
-      .card-title { display:flex; align-items:center; gap: 8px; flex-wrap: wrap; font-weight: 800; }
+      .card-title { display:flex; align-items:center; gap: 8px; flex-wrap: wrap; font-weight: 650; }
       .card-bd { padding: 10px 14px 14px; }
-      .chart { width: 100%; height: 340px; border-radius: 14px; }
+      .chart { width: 100%; height: 340px; border-radius: var(--radius-sm); }
       .analysis { margin-top: 10px; color: var(--muted); line-height: 1.55; white-space: pre-wrap; }
 
       .empty-card {
@@ -159,45 +177,44 @@
         padding: 26px;
         text-align: center;
       }
-      .empty-title { font-weight: 900; font-size: 18px; margin-bottom: 6px; }
+      .empty-title { font-weight: 650; font-size: 17px; margin-bottom: 6px; }
 
       .ant-input {
-        background: rgba(255,255,255,0.06);
-        border-color: rgba(255,255,255,0.16);
+        background: var(--surface);
+        border-color: var(--border-strong);
         color: var(--text);
-        border-radius: 12px;
+        border-radius: var(--radius-sm);
       }
-      .ant-input::placeholder { color: rgba(229, 231, 235, 0.55); }
+      .ant-input::placeholder { color: var(--ink-500); }
       .ant-input:focus, .ant-input-focused {
-        border-color: rgba(6, 182, 212, 0.55);
-        box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.16);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px var(--primary-soft);
       }
-      .ant-btn { border-radius: 12px; }
+      .ant-btn { border-radius: var(--radius-sm); box-shadow: none; }
       .btn-with-icon { display: inline-flex; align-items: center; gap: 6px; }
       .ant-btn-default {
-        background: rgba(255,255,255,0.06);
-        border-color: rgba(255,255,255,0.16);
+        background: var(--surface);
+        border-color: var(--border-strong);
         color: var(--text);
       }
-      .ant-btn-default:hover {
-        border-color: rgba(124, 58, 237, 0.40);
-        color: var(--text);
-      }
+      .ant-btn-default:hover { border-color: var(--primary-border); color: var(--primary); }
       .ant-btn-primary {
         border: none;
-        background: linear-gradient(135deg, rgba(124, 58, 237, 1) 0%, rgba(6, 182, 212, 1) 100%);
+        background: var(--primary);
+        box-shadow: var(--shadow-sm);
       }
-      .ant-btn-primary:hover { opacity: 0.95; }
+      .ant-btn-primary:hover { background: var(--primary-hover) !important; box-shadow: 0 4px 12px rgba(22, 119, 255, 0.24) !important; }
+      .ant-btn-primary:active { transform: translateY(1px); }
       .ant-btn-dangerous {
-        background: rgba(239, 68, 68, 0.16);
-        border-color: rgba(239, 68, 68, 0.45);
-        color: rgba(255,255,255,0.92);
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #b42318;
       }
 
       .ant-tag {
-        border-radius: 999px;
-        background: rgba(255,255,255,0.06);
-        border-color: rgba(255,255,255,0.14);
+        border-radius: var(--radius-sm);
+        background: var(--surface2);
+        border-color: var(--border);
         color: var(--text);
       }
 
@@ -207,15 +224,15 @@
         gap: 8px;
         height: 32px;
         padding: 0 10px 0 4px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.16);
-        background: rgba(255,255,255,0.06);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-strong);
+        background: var(--surface);
         color: var(--text);
         cursor: pointer;
         font-size: 13px;
         transition: border-color .12s ease, background .12s ease;
       }
-      .user-chip:hover { border-color: rgba(124, 58, 237, 0.45); background: rgba(255,255,255,0.10); }
+      .user-chip:hover { border-color: var(--primary-border); background: var(--surface2); }
       .user-chip-avatar {
         width: 24px;
         height: 24px;
@@ -230,7 +247,7 @@
         flex: none;
       }
       .user-chip-name { font-weight: 500; }
-      .kpi-tag { font-size: 11px; color: rgba(229, 231, 235, 0.55); font-weight: 500; }
+      .kpi-tag { font-size: 11px; color: var(--ink-500); font-weight: 500; }
 
       @media (max-width: 1400px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
       @media (max-width: 980px) {
@@ -368,7 +385,7 @@
           <a-form-item label="密码" name="password" :rules="[{ required: true, message: '请输入密码' }]">
             <a-input-password v-model:value="login.password"></a-input-password>
           </a-form-item>
-          <div class="muted" v-if="loginError" style="color:#f87171; margin-bottom: 10px;">{{ loginError }}</div>
+          <div class="muted" v-if="loginError" style="color:#b42318; margin-bottom: 10px;">{{ loginError }}</div>
           <div style="display:flex; justify-content:flex-end; gap: 8px;">
             <a-button @click="showLogin=false">取消</a-button>
             <a-button type="primary" html-type="submit" :loading="busy">登录</a-button>
@@ -435,8 +452,8 @@
         const type = (cfg && cfg.type) || "table";
         if (!cfg || !rows || !rows.length || type === "table") return null;
 
-        const option = { title: { text: cfg.title || "" , textStyle:{ color:'#e5e7eb' } }, tooltip: {}, grid: { left: 40, right: 20, top: 60, bottom: 40 } };
-        option.textStyle = { color: "#e5e7eb" };
+        const option = { title: { text: cfg.title || "" , textStyle:{ color:'#334155' } }, tooltip: {}, grid: { left: 40, right: 20, top: 60, bottom: 40 } };
+        option.textStyle = { color: "#334155" };
 
         if (["line", "bar", "area", "bar_group", "bar_stack", "bar_horizontal"].includes(type)) {
           const xField = cfg.xField;
@@ -480,11 +497,11 @@
           }
 
           if (isHorizontal) {
-            option.xAxis = { type: "value", axisLabel:{ color:'#e5e7eb' } };
-            option.yAxis = { type: "category", data: categories, axisLabel:{ color:'#e5e7eb' } };
+            option.xAxis = { type: "value", axisLabel:{ color:'#334155' } };
+            option.yAxis = { type: "category", data: categories, axisLabel:{ color:'#334155' } };
           } else {
-            option.xAxis = { type: "category", data: categories, axisLabel:{ color:'#e5e7eb' } };
-            option.yAxis = { type: "value", axisLabel:{ color:'#e5e7eb' } };
+            option.xAxis = { type: "category", data: categories, axisLabel:{ color:'#334155' } };
+            option.yAxis = { type: "value", axisLabel:{ color:'#334155' } };
           }
           option.series = series;
         } else if (type === "pie") {
@@ -494,7 +511,7 @@
             type: "pie",
             radius: "70%",
             data: rows.map((r) => ({ name: r[nameField], value: r[valueField] })),
-            label: { color: "#e5e7eb" }
+            label: { color: "#334155" }
           }];
         } else if (type === "heatmap") {
           const xField = cfg.xField;
@@ -503,16 +520,16 @@
           const xs = Array.from(new Set(rows.map((r) => r[xField])));
           const ys = Array.from(new Set(rows.map((r) => r[yField])));
           const data = rows.map((r) => [xs.indexOf(r[xField]), ys.indexOf(r[yField]), r[valueField]]);
-          option.xAxis = { type: "category", data: xs, axisLabel:{ color:'#e5e7eb' } };
-          option.yAxis = { type: "category", data: ys, axisLabel:{ color:'#e5e7eb' } };
-          option.visualMap = { min: 0, max: Math.max(...rows.map((r) => r[valueField] || 0)), calculable: true, orient: "horizontal", left: "center", bottom: 0, textStyle:{ color:'#e5e7eb' } };
+          option.xAxis = { type: "category", data: xs, axisLabel:{ color:'#334155' } };
+          option.yAxis = { type: "category", data: ys, axisLabel:{ color:'#334155' } };
+          option.visualMap = { min: 0, max: Math.max(...rows.map((r) => r[valueField] || 0)), calculable: true, orient: "horizontal", left: "center", bottom: 0, textStyle:{ color:'#334155' } };
           option.series = [{ type: "heatmap", data }];
           option.grid.bottom = 70;
         } else if (type === "scatter") {
           const xField = cfg.xField;
           const yField = cfg.yField;
-          option.xAxis = { type: "value", axisLabel:{ color:'#e5e7eb' } };
-          option.yAxis = { type: "value", axisLabel:{ color:'#e5e7eb' } };
+          option.xAxis = { type: "value", axisLabel:{ color:'#334155' } };
+          option.yAxis = { type: "value", axisLabel:{ color:'#334155' } };
           option.series = [{ type: "scatter", data: rows.map((r) => [r[xField], r[yField]]) }];
         }
         return option;

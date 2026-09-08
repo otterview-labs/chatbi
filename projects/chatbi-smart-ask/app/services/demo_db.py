@@ -6,7 +6,14 @@ import time
 from pathlib import Path
 
 
-def ensure_demo_db(db_path: str) -> None:
+def ensure_demo_db(db_path: str, seed: bool = False) -> None:
+    """确保演示库的表结构存在；默认不再自动灌入虚构数据（seed=False）。
+
+    历史上这里会在表为空时自动插入虚构的火警/人员/装备/检查数据，方便
+    "开箱即用"演示。应产品要求不再默认生成，只保留建表逻辑，保证默认
+    数据源（警情/人员/装备/检查）查询时表存在、返回空结果而非报错。
+    如需要恢复演示数据用于投标/演示场景，显式传入 seed=True。
+    """
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     now_ms = int(time.time() * 1000)
@@ -78,7 +85,7 @@ def ensure_demo_db(db_path: str) -> None:
 
     # alarms
     cur.execute("SELECT COUNT(*) FROM fire_alarm_record")
-    if cur.fetchone()[0] == 0:
+    if seed and cur.fetchone()[0] == 0:
         rng = random.Random(42)
         for i in range(240):
             create_time = now_ms - rng.randint(0, 180) * 24 * 3600 * 1000 - rng.randint(0, 24 * 3600 * 1000)
@@ -104,7 +111,7 @@ def ensure_demo_db(db_path: str) -> None:
     # personnel
     roles = ["值班员", "指挥员", "消防员", "通信员", "驾驶员"]
     cur.execute("SELECT COUNT(*) FROM fire_personnel")
-    if cur.fetchone()[0] == 0:
+    if seed and cur.fetchone()[0] == 0:
         rng = random.Random(43)
         for i in range(80):
             cur.execute(
@@ -123,7 +130,7 @@ def ensure_demo_db(db_path: str) -> None:
 
     # equipment
     cur.execute("SELECT COUNT(*) FROM fire_equipment")
-    if cur.fetchone()[0] == 0:
+    if seed and cur.fetchone()[0] == 0:
         rng = random.Random(44)
         for i in range(120):
             cur.execute(
@@ -144,7 +151,7 @@ def ensure_demo_db(db_path: str) -> None:
     # inspection
     results = ["合格", "基本合格", "不合格"]
     cur.execute("SELECT COUNT(*) FROM fire_inspection")
-    if cur.fetchone()[0] == 0:
+    if seed and cur.fetchone()[0] == 0:
         rng = random.Random(45)
         now_s = time.time()
         for i in range(120):
@@ -169,3 +176,8 @@ def ensure_demo_db(db_path: str) -> None:
 
     conn.commit()
     conn.close()
+
+
+def seed_demo_data(db_path: str) -> None:
+    """显式生成虚构演示数据（投标/演示场景手动调用），不会被应用自动触发。"""
+    ensure_demo_db(db_path, seed=True)

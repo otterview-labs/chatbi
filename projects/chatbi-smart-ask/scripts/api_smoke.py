@@ -249,14 +249,19 @@ def main() -> int:
                     month_field = key
                     first_month = value
                     break
-        check(status == 200 and chat_query.get('success') is True and bool(result_id) and bool(sql_text) and bool(first_month), '查询问答正常并返回结果ID')
+        # 默认不再自动生成演示数据，火警表可能为空：结果为空也算查询接口正常，
+        # 下钻需要真实的行数据，表为空时跳过（不计为失败）。
+        check(status == 200 and chat_query.get('success') is True and bool(result_id) and bool(sql_text), '查询问答正常并返回结果ID')
 
-        status, drilldown = client.request_json(
-            '/api/drilldown',
-            method='POST',
-            payload={'result_id': result_id, 'field': month_field, 'value': first_month},
-        )
-        check(status == 200 and drilldown.get('success') is True and bool(drilldown.get('data')), '下钻接口正常')
+        if first_month:
+            status, drilldown = client.request_json(
+                '/api/drilldown',
+                method='POST',
+                payload={'result_id': result_id, 'field': month_field, 'value': first_month},
+            )
+            check(status == 200 and drilldown.get('success') is True and bool(drilldown.get('data')), '下钻接口正常')
+        else:
+            print('[SKIP] 下钻接口正常（演示数据为空，无可下钻的行）')
 
         status, stream_text = client.request_text(
             '/api/chat/stream',
