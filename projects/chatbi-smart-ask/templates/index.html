@@ -238,6 +238,7 @@
       .kpi-label { color: var(--muted); font-size: 12px; display:flex; align-items:center; justify-content:space-between; gap: 8px; }
       .kpi-value { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; margin-top: 6px; }
       .kpi-sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+      .kpi-tag { font-size: 11px; color: var(--ink-500); font-weight: 500; }
       .kpi-skeleton { height: 54px; border-radius: var(--radius-sm); background: linear-gradient(90deg, #f1f3f6 0%, #eceff3 35%, #f1f3f6 70%); background-size: 200% 100%; animation: shimmer 1.1s infinite; border: 1px solid var(--border); }
       @keyframes shimmer { 0% { background-position: 0% 0; } 100% { background-position: -200% 0; } }
 
@@ -377,6 +378,36 @@
       }
       .ant-input::placeholder { color: var(--ink-500); }
 
+      .user-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 32px;
+        padding: 0 10px 0 4px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-strong);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 13px;
+        transition: border-color .12s ease, background .12s ease;
+      }
+      .user-chip:hover { border-color: var(--primary-border); background: var(--surface2); }
+      .user-chip-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .user-chip-name { font-weight: 500; }
+
       @media (max-width: 1100px) {
         .main { grid-template-columns: 1fr; }
         .chat { min-height: auto; }
@@ -486,18 +517,27 @@
             </div>
           </div>
 
-        <div style="display:flex; align-items:center; gap: 12px;">
+        <div style="display:flex; align-items:center; gap: 10px;">
           <a-button type="primary" :loading="demoRunning" :disabled="!me" @click="runDemo">一键问数</a-button>
           <a-button type="default" :disabled="busy || !me" @click="confirmResetDb">重置数据</a-button>
           <template v-if="me">
             <a-tag :color="runtimeModeColor">{{ runtimeModeLabel }}</a-tag>
-            <a-tag color="geekblue">{{ me.username }}</a-tag>
-            <a-tag>{{ me.role }}</a-tag>
-            <a-button v-if="me.role === 'admin'" type="default" @click="openAccountManager">账号管理</a-button>
-            <a-button v-if="me.role === 'admin'" type="default" @click="openFeatureSettings">功能配置</a-button>
-            <a-button v-if="me.role === 'admin'" type="default" @click="openBrandEditor">编辑内容</a-button>
-            <a-button type="default" @click="showLogin=true">切换账号</a-button>
-            <a-button type="text" @click="logout">退出</a-button>
+            <a-dropdown placement="bottomRight" :trigger="['click']">
+              <span class="user-chip" @click.prevent>
+                <span class="user-chip-avatar">{{ (me.username || '?').slice(0,1).toUpperCase() }}</span>
+                <span class="user-chip-name">{{ me.username }}</span>
+              </span>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item v-if="me.role === 'admin'" @click="openAccountManager">账号管理</a-menu-item>
+                  <a-menu-item v-if="me.role === 'admin'" @click="openFeatureSettings">功能配置</a-menu-item>
+                  <a-menu-item v-if="me.role === 'admin'" @click="openBrandEditor">编辑内容</a-menu-item>
+                  <a-menu-divider v-if="me.role === 'admin'" ></a-menu-divider>
+                  <a-menu-item @click="showLogin=true">切换账号</a-menu-item>
+                  <a-menu-item @click="logout">退出登录</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </template>
           <template v-else>
             <a-button type="primary" @click="showLogin=true">登录</a-button>
@@ -523,7 +563,7 @@
                   style="min-width: 220px;"
                   placeholder="选择数据源"
                   :disabled="!me"
-                />
+                ></a-select>
               </div>
               <div class="chat-toolbar-group">
                 <span class="muted">对话</span>
@@ -532,7 +572,7 @@
                   :options="conversationOptions"
                   size="small"
                   style="min-width: 180px;"
-                />
+                ></a-select>
               </div>
               <a-button size="small" type="default" @click="newConversation" :disabled="busy || !me">新对话</a-button>
               <a-button size="small" @click="clearConversation" :disabled="busy || !me">清空</a-button>
@@ -557,7 +597,7 @@
                 <div v-for="item in overviewStats" :key="item.label" class="kpi">
                   <div class="kpi-label">
                     <span>{{ item.label }}</span>
-                    <a-tag v-if="item.tag" :color="item.tagColor || 'blue'">{{ item.tag }}</a-tag>
+                    <span v-if="item.tag" class="kpi-tag">{{ item.tag }}</span>
                   </div>
                   <div class="kpi-value">{{ item.value }}</div>
                   <div class="kpi-sub">{{ item.sub }}</div>
@@ -657,7 +697,7 @@
                             size="small"
                             style="width:140px;"
                             @change="(v) => onChartTypeChange(m, v)"
-                          />
+                          ></a-select>
                         </div>
                       </div>
                       <div style="margin-top:10px;">
@@ -759,13 +799,13 @@
       <a-modal v-model:open="showBrandEditor" title="编辑内容" :footer="null" :maskClosable="false" width="520">
         <a-form layout="vertical">
           <a-form-item label="系统名称">
-            <a-input v-model:value="brandForm.productName" />
+            <a-input v-model:value="brandForm.productName" ></a-input>
           </a-form-item>
           <a-form-item label="顶部Logo">
-            <a-input v-model:value="brandForm.headerLogo" />
+            <a-input v-model:value="brandForm.headerLogo" ></a-input>
           </a-form-item>
           <a-form-item label="侧边栏Logo">
-            <a-input v-model:value="brandForm.sideLogo" />
+            <a-input v-model:value="brandForm.sideLogo" ></a-input>
           </a-form-item>
         </a-form>
         <div class="muted">保存后刷新页面即可同步到其它模块。</div>
@@ -779,16 +819,16 @@
       <a-modal v-model:open="showAccountManager" title="账号管理" :footer="null" width="720">
         <div style="font-weight:650; margin-bottom:8px;">新增账号</div>
         <div style="display:flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-          <a-input v-model:value="userForm.username" placeholder="用户名" style="width: 160px;" />
-          <a-input-password v-model:value="userForm.password" placeholder="初始密码" style="width: 160px;" />
+          <a-input v-model:value="userForm.username" placeholder="用户名" style="width: 160px;" ></a-input>
+          <a-input-password v-model:value="userForm.password" placeholder="初始密码" style="width: 160px;" ></a-input-password>
           <a-select
             v-model:value="userForm.role"
             :options="[{ label: '管理员', value: 'admin' }, { label: '普通用户', value: 'user' }]"
             style="width: 140px;"
-          />
+          ></a-select>
           <a-button type="primary" :loading="userFormLoading" @click="createUser">添加</a-button>
         </div>
-        <a-divider />
+        <a-divider ></a-divider>
         <template v-if="users.length">
           <a-list :data-source="users" bordered>
             <template #renderItem="{ item }">
@@ -813,10 +853,10 @@
       <a-modal v-model:open="showResetPassword" title="重置密码" :footer="null" :maskClosable="false" width="420">
         <a-form layout="vertical">
           <a-form-item label="账号">
-            <a-input v-model:value="resetPassword.username" disabled />
+            <a-input v-model:value="resetPassword.username" disabled ></a-input>
           </a-form-item>
           <a-form-item label="新密码">
-            <a-input-password v-model:value="resetPassword.password" placeholder="输入新密码" />
+            <a-input-password v-model:value="resetPassword.password" placeholder="输入新密码" ></a-input-password>
           </a-form-item>
         </a-form>
         <div style="display:flex; justify-content:flex-end; gap: 8px; margin-top: 12px;">
@@ -854,24 +894,24 @@
           <div style="font-weight:650; margin-bottom:8px;">模板编辑</div>
           <a-form layout="vertical">
             <a-form-item label="名称">
-              <a-input v-model:value="customChartForm.name" placeholder="如：自定义柱线图" />
+              <a-input v-model:value="customChartForm.name" placeholder="如：自定义柱线图" ></a-input>
             </a-form-item>
             <a-form-item label="说明">
-              <a-input v-model:value="customChartForm.description" />
+              <a-input v-model:value="customChartForm.description" ></a-input>
             </a-form-item>
             <div style="display:flex; gap:8px;">
               <a-form-item label="系列类型" style="flex:1;">
-                <a-select v-model:value="customChartForm.seriesType" :options="customChartSeriesOptions" />
+                <a-select v-model:value="customChartForm.seriesType" :options="customChartSeriesOptions" ></a-select>
               </a-form-item>
               <a-form-item label="X字段（可空）" style="flex:1;">
-                <a-input v-model:value="customChartForm.xField" />
+                <a-input v-model:value="customChartForm.xField" ></a-input>
               </a-form-item>
               <a-form-item label="Y字段（可空）" style="flex:1;">
-                <a-input v-model:value="customChartForm.yField" />
+                <a-input v-model:value="customChartForm.yField" ></a-input>
               </a-form-item>
             </div>
             <a-form-item label="ECharts option 覆盖（JSON对象）">
-              <a-textarea v-model:value="customChartForm.optionJson" :auto-size="{minRows:7,maxRows:12}" />
+              <a-textarea v-model:value="customChartForm.optionJson" :auto-size="{minRows:7,maxRows:12}" ></a-textarea>
             </a-form-item>
           </a-form>
           <div class="muted">协议：系统自动根据结果表生成基础 option，可在此 JSON 中覆盖 color、legend、grid、series 等 ECharts 配置。</div>
@@ -886,24 +926,24 @@
       <a-form layout="vertical">
         <div style="display:flex; gap:12px; flex-wrap:wrap;">
           <a-form-item label="启用">
-            <a-switch v-model:checked="mailSettings.enabled" />
+            <a-switch v-model:checked="mailSettings.enabled" ></a-switch>
           </a-form-item>
           <a-form-item label="SMTP主机" style="flex:1; min-width:220px;">
-            <a-input v-model:value="mailSettings.smtp_host" placeholder="smtp.example.com" />
+            <a-input v-model:value="mailSettings.smtp_host" placeholder="smtp.example.com" ></a-input>
           </a-form-item>
           <a-form-item label="端口" style="width:120px;">
-            <a-input-number v-model:value="mailSettings.smtp_port" :min="1" :max="65535" style="width:100%;" />
+            <a-input-number v-model:value="mailSettings.smtp_port" :min="1" :max="65535" style="width:100%;" ></a-input-number>
           </a-form-item>
         </div>
         <div style="display:flex; gap:12px; flex-wrap:wrap;">
           <a-form-item label="账号" style="flex:1; min-width:220px;">
-            <a-input v-model:value="mailSettings.smtp_user" />
+            <a-input v-model:value="mailSettings.smtp_user" ></a-input>
           </a-form-item>
           <a-form-item label="密码/授权码" style="flex:1; min-width:220px;">
-            <a-input-password v-model:value="mailSettings.smtp_password" :placeholder="mailSettings.password_set ? '已保存，留空不修改' : '输入密码或授权码'" />
+            <a-input-password v-model:value="mailSettings.smtp_password" :placeholder="mailSettings.password_set ? '已保存，留空不修改' : '输入密码或授权码'" ></a-input-password>
           </a-form-item>
           <a-form-item label="发件人" style="flex:1; min-width:220px;">
-            <a-input v-model:value="mailSettings.from_addr" placeholder="bi@example.com" />
+            <a-input v-model:value="mailSettings.from_addr" placeholder="bi@example.com" ></a-input>
           </a-form-item>
         </div>
         <div style="display:flex; gap:18px; align-items:center; margin-bottom:12px;">
@@ -911,10 +951,10 @@
           <a-checkbox v-model:checked="mailSettings.use_ssl">SSL</a-checkbox>
         </div>
         <a-form-item label="默认收件人（逗号或换行分隔）">
-          <a-textarea v-model:value="mailRecipientsText" :auto-size="{minRows:2,maxRows:5}" />
+          <a-textarea v-model:value="mailRecipientsText" :auto-size="{minRows:2,maxRows:5}" ></a-textarea>
         </a-form-item>
         <a-form-item label="默认标题模板">
-          <a-input v-model:value="mailSettings.subject_template" />
+          <a-input v-model:value="mailSettings.subject_template" ></a-input>
         </a-form-item>
       </a-form>
       <div class="muted">标题模板支持 {question}。没有 SMTP 参数时可先保存配置，发送时会提示缺少项。</div>
@@ -954,36 +994,36 @@
           <div style="font-weight:650; margin-bottom:8px;">报告编辑</div>
           <a-form layout="vertical">
             <a-form-item label="名称">
-              <a-input v-model:value="reportForm.name" placeholder="如：每日消防态势报告" />
+              <a-input v-model:value="reportForm.name" placeholder="如：每日消防态势报告" ></a-input>
             </a-form-item>
             <a-form-item label="说明">
-              <a-input v-model:value="reportForm.description" />
+              <a-input v-model:value="reportForm.description" ></a-input>
             </a-form-item>
             <a-form-item label="问题清单（每行一个问题）">
-              <a-textarea v-model:value="reportForm.questionsText" :auto-size="{minRows:3,maxRows:8}" placeholder="各单位火警数量统计&#10;本月装备库存情况" />
+              <a-textarea v-model:value="reportForm.questionsText" :auto-size="{minRows:3,maxRows:8}" placeholder="各单位火警数量统计&#10;本月装备库存情况" ></a-textarea>
             </a-form-item>
             <a-form-item label="数据源">
-              <a-select v-model:value="reportForm.datasource_ids" mode="multiple" :options="dataSources.map((d) => ({ label: d.name, value: d.id }))" placeholder="留空使用全部数据源" />
+              <a-select v-model:value="reportForm.datasource_ids" mode="multiple" :options="dataSources.map((d) => ({ label: d.name, value: d.id }))" placeholder="留空使用全部数据源" ></a-select>
             </a-form-item>
             <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
               <a-form-item label="格式">
-                <a-checkbox-group v-model:value="reportForm.formats" :options="[{label:'PDF',value:'pdf'},{label:'PPT',value:'pptx'}]" />
+                <a-checkbox-group v-model:value="reportForm.formats" :options="[{label:'PDF',value:'pdf'},{label:'PPT',value:'pptx'}]" ></a-checkbox-group>
               </a-form-item>
               <a-form-item label="定时发送">
-                <a-switch v-model:checked="reportForm.schedule.enabled" />
+                <a-switch v-model:checked="reportForm.schedule.enabled" ></a-switch>
               </a-form-item>
               <a-form-item label="调度方式">
-                <a-select v-model:value="reportForm.schedule.type" style="width:120px;" :options="[{label:'每天',value:'daily'},{label:'按间隔',value:'interval'}]" />
+                <a-select v-model:value="reportForm.schedule.type" style="width:120px;" :options="[{label:'每天',value:'daily'},{label:'按间隔',value:'interval'}]" ></a-select>
               </a-form-item>
               <a-form-item label="发送时间" v-if="reportForm.schedule.type === 'daily'">
-                <a-input v-model:value="reportForm.schedule.time" style="width:100px;" placeholder="08:30" />
+                <a-input v-model:value="reportForm.schedule.time" style="width:100px;" placeholder="08:30" ></a-input>
               </a-form-item>
               <a-form-item label="间隔（分钟）" v-else>
-                <a-input-number v-model:value="reportForm.schedule.interval_minutes" :min="5" style="width:110px;" />
+                <a-input-number v-model:value="reportForm.schedule.interval_minutes" :min="5" style="width:110px;" ></a-input-number>
               </a-form-item>
             </div>
             <a-form-item label="收件人（逗号或换行分隔，留空用邮件默认收件人）">
-              <a-textarea v-model:value="reportForm.recipientsText" :auto-size="{minRows:2,maxRows:4}" />
+              <a-textarea v-model:value="reportForm.recipientsText" :auto-size="{minRows:2,maxRows:4}" ></a-textarea>
             </a-form-item>
           </a-form>
           <div class="muted">定时发送依赖“邮件通知”页的 SMTP 配置；也可在左侧手动生成 PDF/PPT 下载。</div>
@@ -1000,13 +1040,13 @@
 <a-modal v-model:open="showMailSend" title="发送问数结果邮件" :footer="null" width="620">
   <a-form layout="vertical">
     <a-form-item label="收件人（逗号或换行分隔）">
-      <a-textarea v-model:value="mailSend.recipientsText" :auto-size="{minRows:2,maxRows:5}" />
+      <a-textarea v-model:value="mailSend.recipientsText" :auto-size="{minRows:2,maxRows:5}" ></a-textarea>
     </a-form-item>
     <a-form-item label="标题">
-      <a-input v-model:value="mailSend.subject" />
+      <a-input v-model:value="mailSend.subject" ></a-input>
     </a-form-item>
     <a-form-item label="附加说明">
-      <a-textarea v-model:value="mailSend.message" :auto-size="{minRows:3,maxRows:6}" />
+      <a-textarea v-model:value="mailSend.message" :auto-size="{minRows:3,maxRows:6}" ></a-textarea>
     </a-form-item>
   </a-form>
   <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
@@ -1018,16 +1058,16 @@
       <a-modal v-model:open="showAddSource" title="新增数据源" :footer="null" :maskClosable="false">
         <a-form layout="vertical">
           <a-form-item label="数据源ID">
-            <a-input v-model:value="addSource.id" placeholder="仅字母/数字/下划线" />
+            <a-input v-model:value="addSource.id" placeholder="仅字母/数字/下划线" ></a-input>
           </a-form-item>
           <a-form-item label="名称">
-            <a-input v-model:value="addSource.name" placeholder="如：交通专题库" />
+            <a-input v-model:value="addSource.name" placeholder="如：交通专题库" ></a-input>
           </a-form-item>
           <a-form-item label="描述">
-            <a-input v-model:value="addSource.description" placeholder="可选" />
+            <a-input v-model:value="addSource.description" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="数据库类型">
-            <a-select v-model:value="addSource.db_type" :options="dbTypeOptions" />
+            <a-select v-model:value="addSource.db_type" :options="dbTypeOptions" ></a-select>
           </a-form-item>
           <a-form-item label="连接方式" v-if="addSource.db_type !== 'sqlite'">
             <a-radio-group v-model:value="addSource.connection_mode">
@@ -1039,36 +1079,36 @@
             <a-input
               v-model:value="addSource.db_url"
               placeholder="mysql+pymysql://user:pass@host:3306/db 或 postgresql+psycopg://user:pass@host:5432/db"
-            />
+            ></a-input>
           </a-form-item>
           <template v-if="addSource.db_type !== 'sqlite' && addSource.connection_mode === 'manual'">
             <a-form-item label="主机">
-              <a-input v-model:value="addSource.host" placeholder="例如：127.0.0.1" />
+              <a-input v-model:value="addSource.host" placeholder="例如：127.0.0.1" ></a-input>
             </a-form-item>
             <a-form-item label="端口">
-              <a-input v-model:value="addSource.port" placeholder="MySQL默认3306，PG默认5432" />
+              <a-input v-model:value="addSource.port" placeholder="MySQL默认3306，PG默认5432" ></a-input>
             </a-form-item>
             <a-form-item label="数据库名">
-              <a-input v-model:value="addSource.database" placeholder="例如：demo_db" />
+              <a-input v-model:value="addSource.database" placeholder="例如：demo_db" ></a-input>
             </a-form-item>
             <a-form-item label="用户名">
-              <a-input v-model:value="addSource.username" placeholder="例如：root" />
+              <a-input v-model:value="addSource.username" placeholder="例如：root" ></a-input>
             </a-form-item>
             <a-form-item label="密码（可空）">
-              <a-input-password v-model:value="addSource.password" placeholder="输入数据库密码" />
+              <a-input-password v-model:value="addSource.password" placeholder="输入数据库密码" ></a-input-password>
             </a-form-item>
             <a-form-item label="附加参数（可空）">
-              <a-input v-model:value="addSource.options" placeholder="例如：charset=utf8mb4" />
+              <a-input v-model:value="addSource.options" placeholder="例如：charset=utf8mb4" ></a-input>
             </a-form-item>
             <a-form-item label="预览连接地址">
-              <a-input :value="manualDbUrlPreview()" readonly />
+              <a-input :value="manualDbUrlPreview()" readonly ></a-input>
             </a-form-item>
           </template>
           <a-form-item label="数据库路径（SQLite）" v-if="addSource.db_type === 'sqlite'">
-            <a-input v-model:value="addSource.db_path" placeholder="留空使用默认库 demo.db" />
+            <a-input v-model:value="addSource.db_path" placeholder="留空使用默认库 demo.db" ></a-input>
           </a-form-item>
           <a-form-item label="表名（逗号分隔）">
-            <a-input v-model:value="addSource.tablesText" placeholder="table_a, table_b" />
+            <a-input v-model:value="addSource.tablesText" placeholder="table_a, table_b" ></a-input>
           </a-form-item>
         </a-form>
         <div class="muted">提示：SQLite 使用本机文件路径；MySQL/PG 请填写连接地址。</div>
@@ -1081,33 +1121,33 @@
       <a-modal v-model:open="showAddTable" title="新增表格" :footer="null" :maskClosable="false">
         <a-form layout="vertical">
           <a-form-item label="数据源ID">
-            <a-input v-model:value="addTable.datasourceId" placeholder="新增或已有数据源ID" />
+            <a-input v-model:value="addTable.datasourceId" placeholder="新增或已有数据源ID" ></a-input>
           </a-form-item>
           <a-form-item label="名称（新数据源可填）">
-            <a-input v-model:value="addTable.datasourceName" placeholder="可选" />
+            <a-input v-model:value="addTable.datasourceName" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="描述（新数据源可填）">
-            <a-input v-model:value="addTable.datasourceDescription" placeholder="可选" />
+            <a-input v-model:value="addTable.datasourceDescription" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="数据库路径（SQLite）">
-            <a-input v-model:value="addTable.dbPath" placeholder="留空使用默认库 demo.db" />
+            <a-input v-model:value="addTable.dbPath" placeholder="留空使用默认库 demo.db" ></a-input>
           </a-form-item>
           <a-form-item label="表名">
-            <a-input v-model:value="addTable.tableName" placeholder="例如：traffic_event" />
+            <a-input v-model:value="addTable.tableName" placeholder="例如：traffic_event" ></a-input>
           </a-form-item>
           <a-form-item label="字段定义（每行 name:type）">
             <a-textarea
               v-model:value="addTable.columnsText"
               :auto-size="{minRows:4,maxRows:8}"
               placeholder="id:TEXT&#10;name:TEXT&#10;count:INTEGER"
-            />
+            ></a-textarea>
           </a-form-item>
           <a-form-item label="示例数据（JSON数组，可空）">
             <a-textarea
               v-model:value="addTable.rowsText"
               :auto-size="{minRows:3,maxRows:8}"
               placeholder='[{"id":"A1","name":"样例","count":12}]'
-            />
+            ></a-textarea>
           </a-form-item>
         </a-form>
         <div class="muted">字段类型支持：TEXT/INTEGER/REAL/NUMERIC/BLOB。</div>
@@ -1120,19 +1160,19 @@
       <a-modal v-model:open="showUploadTable" title="上传表格" :footer="null" :maskClosable="false" width="720">
         <a-form layout="vertical">
           <a-form-item label="数据源ID">
-            <a-input v-model:value="uploadTable.datasourceId" placeholder="新增或已有数据源ID" />
+            <a-input v-model:value="uploadTable.datasourceId" placeholder="新增或已有数据源ID" ></a-input>
           </a-form-item>
           <a-form-item label="名称（新数据源可填）">
-            <a-input v-model:value="uploadTable.datasourceName" placeholder="可选" />
+            <a-input v-model:value="uploadTable.datasourceName" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="描述（新数据源可填）">
-            <a-input v-model:value="uploadTable.datasourceDescription" placeholder="可选" />
+            <a-input v-model:value="uploadTable.datasourceDescription" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="数据库路径（SQLite）">
-            <a-input v-model:value="uploadTable.dbPath" placeholder="留空使用默认库 demo.db" />
+            <a-input v-model:value="uploadTable.dbPath" placeholder="留空使用默认库 demo.db" ></a-input>
           </a-form-item>
           <a-form-item label="表名">
-            <a-input v-model:value="uploadTable.tableName" placeholder="例如：traffic_event" />
+            <a-input v-model:value="uploadTable.tableName" placeholder="例如：traffic_event" ></a-input>
           </a-form-item>
           <a-form-item label="选择文件（Excel/CSV）">
             <input type="file" accept=".xlsx,.xls,.csv" @change="handleUploadFileChange" />
@@ -1144,10 +1184,10 @@
               :disabled="uploadSheetOptions.length<=1"
               @change="onUploadSheetChange"
               placeholder="默认第一张"
-            />
+            ></a-select>
           </a-form-item>
           <a-form-item label="最大导入行数">
-            <a-input-number v-model:value="uploadTable.maxRows" :min="1" :max="20000" style="width:160px;" />
+            <a-input-number v-model:value="uploadTable.maxRows" :min="1" :max="20000" style="width:160px;" ></a-input-number>
           </a-form-item>
         </a-form>
         <div class="muted">字段名会自动清洗为字母/数字/下划线；建议表名使用英文或下划线。</div>

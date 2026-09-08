@@ -249,6 +249,36 @@
         color: var(--text);
       }
 
+      .user-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 32px;
+        padding: 0 10px 0 4px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-strong);
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 13px;
+        transition: border-color .12s ease, background .12s ease;
+      }
+      .user-chip:hover { border-color: var(--primary-border); background: var(--surface2); }
+      .user-chip-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+      }
+      .user-chip-name { font-weight: 500; }
+
       @media (max-width: 1100px) {
         .main { grid-template-columns: 1fr; }
       }
@@ -277,13 +307,21 @@
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; gap: 12px;">
+        <div style="display:flex; align-items:center; gap: 10px;">
           <a-button type="default" @click="openChat">返回问数</a-button>
           <template v-if="me">
-            <a-tag color="geekblue">{{ me.username }}</a-tag>
-            <a-tag>{{ me.role }}</a-tag>
-            <a-button type="default" @click="showLogin=true">切换账号</a-button>
-            <a-button type="text" @click="logout">退出</a-button>
+            <a-dropdown placement="bottomRight" :trigger="['click']">
+              <span class="user-chip" @click.prevent>
+                <span class="user-chip-avatar">{{ (me.username || '?').slice(0,1).toUpperCase() }}</span>
+                <span class="user-chip-name">{{ me.username }}</span>
+              </span>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item @click="showLogin=true">切换账号</a-menu-item>
+                  <a-menu-item @click="logout">退出登录</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </template>
           <template v-else>
             <a-button type="primary" @click="showLogin=true">登录</a-button>
@@ -316,7 +354,7 @@
           <div class="card-bd">
             <div class="muted" style="margin-bottom:10px;">上传表格会自动生成可查询的数据表，回到智能问数可直接提问。</div>
             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
-              <a-input v-model:value="sourceSearch" placeholder="按名称 / ID / 表名筛选数据源" style="max-width:320px;" allow-clear />
+              <a-input v-model:value="sourceSearch" placeholder="按名称 / ID / 表名筛选数据源" style="max-width:320px;" allow-clear ></a-input>
               <span class="muted">已勾选的数据源会同步到问数页</span>
             </div>
             <template v-if="filteredDataSources.length">
@@ -418,16 +456,16 @@
       <a-modal v-model:open="showAddSource" title="新增数据源" :footer="null" :maskClosable="false">
         <a-form layout="vertical">
           <a-form-item label="数据源ID">
-            <a-input v-model:value="addSource.id" placeholder="仅字母/数字/下划线" />
+            <a-input v-model:value="addSource.id" placeholder="仅字母/数字/下划线" ></a-input>
           </a-form-item>
           <a-form-item label="名称">
-            <a-input v-model:value="addSource.name" placeholder="如：交通专题库" />
+            <a-input v-model:value="addSource.name" placeholder="如：交通专题库" ></a-input>
           </a-form-item>
           <a-form-item label="描述">
-            <a-input v-model:value="addSource.description" placeholder="可选" />
+            <a-input v-model:value="addSource.description" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="数据库类型">
-            <a-select v-model:value="addSource.db_type" :options="dbTypeOptions" />
+            <a-select v-model:value="addSource.db_type" :options="dbTypeOptions" ></a-select>
           </a-form-item>
           <a-form-item label="连接方式" v-if="addSource.db_type !== 'sqlite'">
             <a-radio-group v-model:value="addSource.connection_mode">
@@ -439,36 +477,36 @@
             <a-input
               v-model:value="addSource.db_url"
               placeholder="mysql+pymysql://user:pass@host:3306/db、postgresql+psycopg://user:pass@host:5432/db 或 clickhouse+http://user:pass@host:8123/db"
-            />
+            ></a-input>
           </a-form-item>
           <template v-if="addSource.db_type !== 'sqlite' && addSource.connection_mode === 'manual'">
             <a-form-item label="主机">
-              <a-input v-model:value="addSource.host" placeholder="例如：127.0.0.1" />
+              <a-input v-model:value="addSource.host" placeholder="例如：127.0.0.1" ></a-input>
             </a-form-item>
             <a-form-item label="端口">
-              <a-input v-model:value="addSource.port" placeholder="MySQL默认3306，PG默认5432，ClickHouse默认8123" />
+              <a-input v-model:value="addSource.port" placeholder="MySQL默认3306，PG默认5432，ClickHouse默认8123" ></a-input>
             </a-form-item>
             <a-form-item label="数据库名">
-              <a-input v-model:value="addSource.database" placeholder="例如：demo_db" />
+              <a-input v-model:value="addSource.database" placeholder="例如：demo_db" ></a-input>
             </a-form-item>
             <a-form-item label="用户名">
-              <a-input v-model:value="addSource.username" placeholder="例如：root" />
+              <a-input v-model:value="addSource.username" placeholder="例如：root" ></a-input>
             </a-form-item>
             <a-form-item label="密码（可空）">
-              <a-input-password v-model:value="addSource.password" placeholder="输入数据库密码" />
+              <a-input-password v-model:value="addSource.password" placeholder="输入数据库密码" ></a-input-password>
             </a-form-item>
             <a-form-item label="附加参数（可空）">
-              <a-input v-model:value="addSource.options" placeholder="例如：charset=utf8mb4" />
+              <a-input v-model:value="addSource.options" placeholder="例如：charset=utf8mb4" ></a-input>
             </a-form-item>
             <a-form-item label="预览连接地址">
-              <a-input :value="manualDbUrlPreview()" readonly />
+              <a-input :value="manualDbUrlPreview()" readonly ></a-input>
             </a-form-item>
           </template>
           <a-form-item label="数据库路径（SQLite）" v-if="addSource.db_type === 'sqlite'">
-            <a-input v-model:value="addSource.db_path" placeholder="留空使用默认库 demo.db" />
+            <a-input v-model:value="addSource.db_path" placeholder="留空使用默认库 demo.db" ></a-input>
           </a-form-item>
           <a-form-item label="表名（逗号分隔）">
-            <a-input v-model:value="addSource.tablesText" placeholder="table_a, table_b" />
+            <a-input v-model:value="addSource.tablesText" placeholder="table_a, table_b" ></a-input>
           </a-form-item>
         </a-form>
         <div class="muted">提示：SQLite 使用本机文件路径；MySQL/PG 请填写连接地址。</div>
@@ -481,33 +519,33 @@
       <a-modal v-model:open="showAddTable" title="新增表格" :footer="null" :maskClosable="false">
         <a-form layout="vertical">
           <a-form-item label="数据源ID">
-            <a-input v-model:value="addTable.datasourceId" placeholder="新增或已有数据源ID" />
+            <a-input v-model:value="addTable.datasourceId" placeholder="新增或已有数据源ID" ></a-input>
           </a-form-item>
           <a-form-item label="名称（新数据源可填）">
-            <a-input v-model:value="addTable.datasourceName" placeholder="可选" />
+            <a-input v-model:value="addTable.datasourceName" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="描述（新数据源可填）">
-            <a-input v-model:value="addTable.datasourceDescription" placeholder="可选" />
+            <a-input v-model:value="addTable.datasourceDescription" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="数据库路径（SQLite）">
-            <a-input v-model:value="addTable.dbPath" placeholder="留空使用默认库 demo.db" />
+            <a-input v-model:value="addTable.dbPath" placeholder="留空使用默认库 demo.db" ></a-input>
           </a-form-item>
           <a-form-item label="表名">
-            <a-input v-model:value="addTable.tableName" placeholder="例如：traffic_event" />
+            <a-input v-model:value="addTable.tableName" placeholder="例如：traffic_event" ></a-input>
           </a-form-item>
           <a-form-item label="字段定义（每行 name:type）">
             <a-textarea
               v-model:value="addTable.columnsText"
               :auto-size="{minRows:4,maxRows:8}"
               placeholder="id:TEXT&#10;name:TEXT&#10;count:INTEGER"
-            />
+            ></a-textarea>
           </a-form-item>
           <a-form-item label="示例数据（JSON数组，可空）">
             <a-textarea
               v-model:value="addTable.rowsText"
               :auto-size="{minRows:3,maxRows:8}"
               placeholder='[{"id":"A1","name":"样例","count":12}]'
-            />
+            ></a-textarea>
           </a-form-item>
         </a-form>
         <div class="muted">字段类型支持：TEXT/INTEGER/REAL/NUMERIC/BLOB。</div>
@@ -520,19 +558,19 @@
       <a-modal v-model:open="showUploadTable" title="上传表格" :footer="null" :maskClosable="false" width="720">
         <a-form layout="vertical">
           <a-form-item label="数据源ID">
-            <a-input v-model:value="uploadTable.datasourceId" placeholder="新增或已有数据源ID" />
+            <a-input v-model:value="uploadTable.datasourceId" placeholder="新增或已有数据源ID" ></a-input>
           </a-form-item>
           <a-form-item label="名称（新数据源可填）">
-            <a-input v-model:value="uploadTable.datasourceName" placeholder="可选" />
+            <a-input v-model:value="uploadTable.datasourceName" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="描述（新数据源可填）">
-            <a-input v-model:value="uploadTable.datasourceDescription" placeholder="可选" />
+            <a-input v-model:value="uploadTable.datasourceDescription" placeholder="可选" ></a-input>
           </a-form-item>
           <a-form-item label="数据库路径（SQLite）">
-            <a-input v-model:value="uploadTable.dbPath" placeholder="留空使用默认库 demo.db" />
+            <a-input v-model:value="uploadTable.dbPath" placeholder="留空使用默认库 demo.db" ></a-input>
           </a-form-item>
           <a-form-item label="表名">
-            <a-input v-model:value="uploadTable.tableName" placeholder="例如：traffic_event" />
+            <a-input v-model:value="uploadTable.tableName" placeholder="例如：traffic_event" ></a-input>
           </a-form-item>
           <a-form-item label="选择文件（Excel/CSV）">
             <input type="file" accept=".xlsx,.xls,.csv" @change="handleUploadFileChange" />
@@ -544,10 +582,10 @@
               :disabled="uploadSheetOptions.length<=1"
               @change="onUploadSheetChange"
               placeholder="默认第一张"
-            />
+            ></a-select>
           </a-form-item>
           <a-form-item label="最大导入行数">
-            <a-input-number v-model:value="uploadTable.maxRows" :min="1" :max="20000" style="width:160px;" />
+            <a-input-number v-model:value="uploadTable.maxRows" :min="1" :max="20000" style="width:160px;" ></a-input-number>
           </a-form-item>
         </a-form>
         <div class="muted">字段名会自动清洗为字母/数字/下划线；建议表名使用英文或下划线。</div>
