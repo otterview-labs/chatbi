@@ -41,6 +41,9 @@ fi
   --include-package=sqlalchemy \
   --include-package=pymysql \
   --include-package=psycopg \
+  --include-package=clickhouse_sqlalchemy \
+  --include-package=reportlab \
+  --include-package=pptx \
   --include-data-dir=templates=templates \
   --include-data-dir=static=static \
   --include-data-dir=storage=storage \
