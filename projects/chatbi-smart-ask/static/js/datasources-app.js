@@ -1,27 +1,8 @@
       const { createApp, ref, computed, nextTick, onMounted, watch } = Vue;
 
-      function apiFetch(path, options = {}) {
-        return fetch(`api${path}`, {
-          credentials: "include",
-          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
-          ...options,
-        }).then(async (r) => {
-          const text = await r.text();
-          let json = null;
-          try { json = text ? JSON.parse(text) : null; } catch {}
-          if (!r.ok) {
-            if (r.status === 401) {
-              try { window.dispatchEvent(new CustomEvent("smartask-auth-required")); } catch {}
-            }
-            const msg = (json && (json.detail || json.message)) || text || `HTTP ${r.status}`;
-            throw new Error(msg);
-          }
-          return json;
-        });
-      }
-
-      const BRAND_STORAGE_KEY = "smartask_brand_config_v1";
-      const DS_SELECTION_KEY = "smartask_selected_datasources_v1";
+      // apiFetch / loadBrandConfig / applyBrandToShell / 数据源选择持久化
+      // 等公共函数已提取到 static/js/common.js（页面加载顺序里排在本文件之前）。
+      const apiFetch = makeApiFetch("api");
 
       function defaultBrandConfig() {
         return {
@@ -30,51 +11,13 @@
         };
       }
 
-      function loadBrandConfig() {
-        try {
-          const raw = localStorage.getItem(BRAND_STORAGE_KEY);
-          const data = raw ? JSON.parse(raw) : null;
-          return { ...defaultBrandConfig(), ...(data || {}) };
-        } catch {
-          return defaultBrandConfig();
-        }
-      }
-
-      function applyBrandToShell(config) {
-        const mapping = {
-          sideLogo: config && config.sideLogo,
-        };
-        Object.entries(mapping).forEach(([key, val]) => {
-          if (!val) return;
-          document.querySelectorAll(`[data-brand="${key}"]`).forEach((el) => {
-            el.textContent = val;
-          });
-        });
-      }
-
-      function loadDatasourceSelection() {
-        try {
-          const raw = localStorage.getItem(DS_SELECTION_KEY);
-          const data = raw ? JSON.parse(raw) : [];
-          return Array.isArray(data) ? data : [];
-        } catch {
-          return [];
-        }
-      }
-
-      function saveDatasourceSelection(ids) {
-        try {
-          localStorage.setItem(DS_SELECTION_KEY, JSON.stringify(ids || []));
-        } catch {}
-      }
-
       const app = createApp({
         setup() {
           // ==============================
           // 数据源页状态区：数据源列表、筛选条件、指标、示例问法、表单态
           // ==============================
           const me = ref(null);
-          const brand = ref(loadBrandConfig());
+          const brand = ref(loadBrandConfig(defaultBrandConfig()));
           const showLogin = ref(false);
           const login = ref({ username: "", password: "" });
           const loginError = ref("");
