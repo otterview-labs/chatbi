@@ -1,59 +1,15 @@
-# ChatBI 前端资源
+# ChatBI 页面资源副本
 
-这是从 ChatBI 项目中单独拷出的前端资源目录。
+本目录保存 ChatBI 的页面资源副本，供参考页面结构。它依赖后端路由和接口，不能作为独立前端应用或纯静态网站运行。
 
-来源项目：
+完整应用位于 [`../chatbi-smart-ask/`](../chatbi-smart-ask/)。运行步骤见[项目首页](../../README.md)和[首次体验指南](../chatbi-smart-ask/docs/first-query.md)。
 
-```text
-/Users/chenhao/code/chatbi-smart-ask
-```
+| 文件 | 内容 |
+| --- | --- |
+| `templates/index.html` | 问数页面 |
+| `templates/dashboard.html` | 图表大屏 |
+| `templates/data_dev.html` | 数据开发页面 |
+| `templates/datasources.html` | 数据源管理 |
+| `static/app_shell.css` | 公共样式 |
 
-当前目录：
-
-```text
-/Users/chenhao/Desktop/code/chatbi-frontend
-```
-
-## 文件说明
-
-```text
-templates/index.html        智能问数首页
-templates/dashboard.html    图表大屏
-templates/data_dev.html     数据开发页面
-templates/datasources.html  数据源管理页面
-static/app_shell.css        页面公共样式
-app/routers/pages.py        FastAPI 页面路由映射
-docs/页面逻辑说明.md          页面结构说明
-```
-
-## 注意
-
-这不是独立前端工程，也不是纯静态站点。页面模板依赖 ChatBI 后端提供的路由和接口：
-
-```text
-GET  /
-GET  /dashboard
-GET  /data-dev
-GET  /datasources
-POST /api/auth/login
-POST /api/chat
-POST /api/chat/stream
-POST /api/sql/run
-GET  /api/runtime
-GET  /api/metrics
-```
-
-如果要完整运行，请启动 ChatBI 后端项目：
-
-```bash
-cd /Users/chenhao/code/chatbi-smart-ask
-source .venv/bin/activate
-source .env.local
-python -m uvicorn app.main:app --host "$SMARTASK_HOST" --port "$SMARTASK_PORT"
-```
-
-然后访问：
-
-```text
-http://127.0.0.1:9010/
-```
+修改当前运行的产品页面时，请以 `chatbi-smart-ask` 内的模板和静态资源为准。两套目录不是两项独立产品。

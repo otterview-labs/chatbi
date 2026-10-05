@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+.local-demo/
 
 # 编译/构建产物（Nuitka 产物有 2.5G，不入库）
 projects/chatbi-smart-ask/build/
