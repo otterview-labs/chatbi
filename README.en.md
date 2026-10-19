@@ -66,6 +66,6 @@ The local app serves `/`, `/dashboard`, `/datasources`, `/data-dev` and `/health
 
 Report problems through [Issues](https://github.com/otterview-labs/chatbi/issues). Include reproduction steps and whether you used `mock` or an actual model. Remove credentials and business data from examples.
 
-This repository currently has no top-level LICENSE covering the project. Project-wide license terms remain to be specified by the maintainer. Third-party dependencies retain their own licenses.
+Unless otherwise noted, original ChatBI code is licensed under the [Apache License 2.0](LICENSE). Third-party dependencies, bundled assets and external data retain their respective licenses and terms.
 
 [Otterview Labs](https://github.com/otterview-labs)

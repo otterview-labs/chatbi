@@ -76,6 +76,6 @@ export SMARTASK_OPENAI_MODEL='your-model-name'
 
 请在 [Issues](https://github.com/otterview-labs/chatbi/issues) 说明复现步骤、运行环境，以及使用的是规则模拟模式还是真实模型；日志和 SQL 示例请先去除凭据与业务数据。
 
-当前仓库没有覆盖整个项目的顶层 LICENSE，项目授权范围待维护者明确。第三方依赖以各自许可证为准。
+除另有说明的文件外，ChatBI 原创代码采用 [Apache License 2.0](LICENSE)。第三方依赖、内置资源及外部数据保留各自的许可证和授权条件。
 
 [Otterview Labs](https://github.com/otterview-labs)
