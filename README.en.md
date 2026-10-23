@@ -4,7 +4,7 @@
 
 Ask a database question, inspect the generated SQL, and view the result as a table or chart. Pin charts to a Dashboard to keep several results together.
 
-ChatBI is a FastAPI + Vue prototype for local evaluation and demonstrations. It starts in a rule-based `mock` mode. Connect a model service separately to evaluate actual natural-language-to-SQL generation.
+ChatBI is a self-hosted data-query tool built with FastAPI and Vue, with visible SQL, tables and charts. It starts in rule-based `mock` mode; connect a model service for natural-language-to-SQL generation.
 
 ## Features
 
@@ -28,11 +28,11 @@ python3 -m venv .venv
 SMARTASK_LLM_PROVIDER=mock .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 9010
 ```
 
-Open [the local app](http://127.0.0.1:9010/). A new local installation creates the demonstration account `admin` / `admin123`.
+Open [the local app](http://127.0.0.1:9010/). A new local installation creates the initial local account `admin` / `admin123`.
 
 Startup creates the example table schema without seeding records. Empty query results are expected until you add data. The [first query guide](projects/chatbi-smart-ask/docs/first-query.md) explains how to explicitly seed synthetic records, try a question, inspect SQL and pin a chart. The interface and sample questions are in Chinese.
 
-Synthetic records are demonstration data. Rule-based `mock` results do not measure model quality.
+Synthetic records are sample data. Rule-based `mock` results do not measure model quality.
 
 ## Connect a model
 
